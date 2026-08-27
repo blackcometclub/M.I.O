@@ -11,6 +11,7 @@ $desktopRoot = Join-Path $repositoryRoot "apps\desktop"
 $tauriExecutable = Join-Path $repositoryRoot "node_modules\.bin\tauri.cmd"
 $rustFlagsVariable = "CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS"
 $staticCrtFlags = "-C target-feature=+crt-static"
+$pathVariable = "PATH"
 $cargoCommand = Get-Command cargo.exe -ErrorAction SilentlyContinue
 
 if ($null -ne $cargoCommand) {
@@ -24,15 +25,27 @@ else {
     }
 }
 
+$cargoDirectory = Split-Path -Parent $cargoExecutable
 $previousRustFlags = [Environment]::GetEnvironmentVariable($rustFlagsVariable, "Process")
+$previousPath = [Environment]::GetEnvironmentVariable($pathVariable, "Process")
+$buildPath = if ([string]::IsNullOrEmpty($previousPath)) {
+    $cargoDirectory
+}
+else {
+    "$cargoDirectory$([IO.Path]::PathSeparator)$previousPath"
+}
+$locationPushed = $false
 
 if (-not (Test-Path -LiteralPath $tauriExecutable -PathType Leaf)) {
     throw "The local Tauri CLI was not found. Run npm ci before building the Windows alpha executable."
 }
 
-[Environment]::SetEnvironmentVariable($rustFlagsVariable, $staticCrtFlags, "Process")
-Push-Location -LiteralPath $desktopRoot
 try {
+    [Environment]::SetEnvironmentVariable($pathVariable, $buildPath, "Process")
+    [Environment]::SetEnvironmentVariable($rustFlagsVariable, $staticCrtFlags, "Process")
+    Push-Location -LiteralPath $desktopRoot
+    $locationPushed = $true
+
     & $tauriExecutable `
         build `
         --no-bundle `
@@ -53,6 +66,9 @@ try {
     Write-Host "SHA-256: $($artifactHash.Hash)"
 }
 finally {
-    Pop-Location
+    if ($locationPushed) {
+        Pop-Location
+    }
     [Environment]::SetEnvironmentVariable($rustFlagsVariable, $previousRustFlags, "Process")
+    [Environment]::SetEnvironmentVariable($pathVariable, $previousPath, "Process")
 }

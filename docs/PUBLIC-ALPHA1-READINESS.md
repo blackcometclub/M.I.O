@@ -1230,14 +1230,36 @@ Post-publication boundary correction:
   - 修復ではprivate development repositoryを`M.I.O-dev`として保持し、除外済みsnapshotだけを
     1 commitの新しい`M.I.O` repositoryへ公開する。既存開発履歴のforce rewriteは行わない。
 
+Remediated repository evidence:
+
+- Date: 2026-08-27
+- Private development repository: `blackcometclub/M.I.O-dev`
+- Public candidate repository: `blackcometclub/M.I.O`（検査時点ではprivate）
+- Snapshot root commit: `74d0a441cdeab7a65da239c3fee7d58d462db212`
+- CI URL: https://github.com/blackcometclub/M.I.O/actions/runs/33037366785
+- Notes:
+  - Private development repositoryを`M.I.O-dev`へ改名し、local originも同じprivate URLへ固定した。
+    旧120 commit、private tag / Release、追跡外Fable / HANDOFFはprivate側だけに保持している。
+  - `8b06159e9061e66d31925f3c9ff69338b43b641f`からexporterで310ファイルを再生成した。
+    開発計画、旧readiness、HANDOFFの除外対象は0件、historyとuntracked fileも含まない。
+  - 新しい`M.I.O`はsnapshot root 1 commitから開始した。Root authorはGitHub noreply identityを使用し、
+    tracked file 310件、除外対象0件、Gitleaks v8.30.1は1 commit・約1.95 MBで0 findingsだった。
+  - GitHub Actions Windows CIは10分19秒で成功し、dependency導入、typecheck、frontend build、
+    evidence sanitization、Rust format、Windows dependency boundary、Rust workspace testを含む
+    全stepがPASSした。
+  - GitHub側でもcommit数1、blob 310件を確認した。Description、9 topics、Issues、Dependabot
+    vulnerability alerts、automated security fixesを設定した。Publicへ変更する前に検査を完了した。
+  - 最終readiness記録はsnapshot後のsanitized documentation commitとしてpublic historyへ追加する。
+    Release tagをそのcommitへ固定し、GitHub自動生成Source codeにもsanitized historyだけが入ることを
+    public変更前後に再確認する。
+
 ## Final decision
 
-- [ ] **GO:** 必須項目が完了し、未完了項目はalpha.1の公開範囲外である。
-- [x] **NO-GO:** 必須項目に未解決の失敗がある。公開せず、原因と次の確認を記録する。
+- [x] **GO:** 必須項目が完了し、未完了項目はalpha.1の公開範囲外である。
+- [ ] **NO-GO:** 必須項目に未解決の失敗がある。公開せず、原因と次の確認を記録する。
 
 - Decision date: 2026-08-27
-- Release commit: `35479df0871003e37834099955095bda5e98a3e3`
+- Release commit: tag `v0.1.0-alpha.1`が指すsanitized public repository HEAD
 - Decision maker: Owner
-- Remaining deferred items: 公開repositoryの履歴分離、installer、code signing、自動更新、安定版SLA、
-  Windows以外の対応保証、workspace access、公開Remote Relay、複数device / account、
-  各experimental feature。
+- Remaining deferred items: installer、code signing、自動更新、安定版SLA、Windows以外の対応保証、
+  workspace access、公開Remote Relay、複数device / account、各experimental feature。

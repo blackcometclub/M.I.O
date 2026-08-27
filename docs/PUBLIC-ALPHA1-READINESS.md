@@ -1253,13 +1253,33 @@ Remediated repository evidence:
     Release tagをそのcommitへ固定し、GitHub自動生成Source codeにもsanitized historyだけが入ることを
     public変更前後に再確認する。
 
+Post-republication verification:
+
+- Date: 2026-08-27
+- Release tag / commit: `v0.1.0-alpha.1` /
+  `d7774aae22ddf266fc490a1e81c64315d3f29b7e`
+- Release URL: https://github.com/blackcometclub/M.I.O/releases/tag/v0.1.0-alpha.1
+- Notes:
+  - Sanitized `M.I.O`だけをpublicへ変更し、Private vulnerability reportingを有効化した。
+    Repository本体とPrereleaseは匿名アクセスでHTTP 200、reporting専用APIはHTTP 200と
+    `{"enabled":true}`を返した。
+  - 公開tag tree、custom source ZIP、GitHub自動生成Source code ZIPはいずれも310ファイルで、
+    開発計画、旧readiness、HANDOFFの除外対象は0件だった。代表的な除外文書のraw URLはHTTP 404だった。
+  - 公開URLから新規cloneした履歴はsanitized 2 commitだけで、tracked file 310件、除外対象0件、
+    tagはHEADと一致した。Gitleaks v8.30.1は約1.95 MBをscanし、0 findingsだった。
+  - 添付した`mio-v0.1.0-alpha.1-source.zip`は4,639,319 bytesで、GitHub asset APIのdigestは
+    `sha256:28e04f774996b98779884d6cf17828e0085b090ca3a517147418790347525af6`だった。
+    確認時のasset download count、repositoryのstar、forkはいずれも0だった。
+  - Private development repository `M.I.O-dev`はprivateのままで、local development originも
+    同repoへ固定している。Public `M.I.O`へ旧120 commitをpushしていない。
+
 ## Final decision
 
 - [x] **GO:** 必須項目が完了し、未完了項目はalpha.1の公開範囲外である。
 - [ ] **NO-GO:** 必須項目に未解決の失敗がある。公開せず、原因と次の確認を記録する。
 
 - Decision date: 2026-08-27
-- Release commit: tag `v0.1.0-alpha.1`が指すsanitized public repository HEAD
+- Release commit: `d7774aae22ddf266fc490a1e81c64315d3f29b7e`
 - Decision maker: Owner
 - Remaining deferred items: installer、code signing、自動更新、安定版SLA、Windows以外の対応保証、
   workspace access、公開Remote Relay、複数device / account、各experimental feature。

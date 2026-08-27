@@ -1,0 +1,433 @@
+.participant-bar {
+  position: relative;
+  display: block;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid rgb(255 255 255 / 66%);
+  border-radius: 16px;
+  background: rgb(255 249 229 / 68%);
+  backdrop-filter: blur(12px);
+  container-name: participant-bar;
+  container-type: inline-size;
+}
+
+.room-workspace > .participant-bar {
+  z-index: 40;
+}
+
+.participant-heading {
+  display: flex;
+  min-width: 0;
+  margin-bottom: 7px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.participant-bar.is-collapsed .participant-heading {
+  margin-bottom: 0;
+}
+
+.participant-heading-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.participant-copy {
+  min-width: 0;
+  padding-left: 3px;
+}
+
+.participant-copy strong,
+.participant-copy span {
+  display: block;
+}
+
+.participant-copy strong {
+  font-size: 0.73em;
+}
+
+.participant-copy span {
+  margin-top: 2px;
+  color: #876f51;
+  font-size: 0.58em;
+}
+
+.participant-list {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  overflow: visible;
+}
+
+.participant-list[hidden] {
+  display: none;
+}
+
+.participant-button,
+.participant-add-button {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 38px;
+  padding: 4px 9px 4px 5px;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: #7c6c57;
+  background: rgb(255 255 255 / 54%);
+  cursor: pointer;
+}
+
+.participant-button {
+  flex: 1 1 150px;
+  max-width: 210px;
+  min-height: 50px;
+}
+
+.participant-add-button {
+  min-height: 34px;
+  font-size: 0.68em;
+  font-weight: 800;
+}
+
+.participant-identity {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+  text-align: left;
+}
+
+.participant-identity strong {
+  overflow: hidden;
+  font-size: 0.68em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.participant-name-line {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.participant-name-line em,
+.participant-menu > button em {
+  overflow: hidden;
+  color: #a0713a;
+  font-size: 0.48em;
+  font-style: normal;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.participant-menu > button em {
+  display: block;
+  margin-top: 1px;
+  font-size: 0.55em;
+}
+
+.connection-state {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #8c7b66;
+  font-size: 0.52em;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.connection-state i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #a99c8d;
+}
+
+.connection-state.is-ready i {
+  background: #29a36a;
+  box-shadow: 0 0 0 2px rgb(41 163 106 / 13%);
+}
+
+.connection-state.is-installed i {
+  background: #db912c;
+}
+
+.connection-state.is-setupRequired i,
+.connection-state.is-unsupported i {
+  background: #9c9185;
+}
+
+.participant-button.is-selected {
+  padding-right: 24px;
+  color: #44311c;
+  border-color: rgb(152 82 12 / 24%);
+  background: #fffaf0;
+  box-shadow: 0 3px 10px rgb(103 65 12 / 10%);
+}
+
+.participant-check {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: none;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  border-radius: 50%;
+  color: white;
+  font-size: 0.56em;
+  background: #bd6715;
+}
+
+.participant-button.is-selected .participant-check {
+  display: grid;
+}
+
+.participant-button:disabled {
+  cursor: default;
+}
+
+.participant-conductor-badge {
+  position: absolute;
+  z-index: 2;
+  left: 34px;
+  bottom: 3px;
+  display: grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  border: 2px solid #fffaf0;
+  border-radius: 50%;
+  color: white;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 8px;
+  font-weight: 900;
+  background: #7b3fc6;
+  box-shadow: 0 2px 5px rgb(61 27 94 / 25%);
+}
+
+.participant-add-wrap {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.participant-toggle-button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgb(110 77 30 / 18%);
+  border-radius: 50%;
+  color: #7c6c57;
+  background: rgb(255 255 255 / 42%);
+  cursor: pointer;
+}
+
+.participant-toggle-button:hover {
+  color: #44311c;
+  background: rgb(255 255 255 / 72%);
+}
+
+.participant-toggle-button:focus-visible {
+  outline: 2px solid rgb(189 103 21 / 52%);
+  outline-offset: 2px;
+}
+
+.participant-toggle-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  transition: transform 150ms ease;
+}
+
+.participant-bar.is-collapsed .participant-toggle-button svg {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .participant-toggle-button svg {
+    transition: none;
+  }
+}
+
+.participant-add-button {
+  padding: 7px 10px;
+  border-style: dashed;
+  border-color: rgb(110 77 30 / 22%);
+  background: transparent;
+}
+
+.participant-menu {
+  top: calc(100% + 9px);
+  right: 0;
+  width: 260px;
+  max-height: min(380px, 52vh);
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.participant-menu .popover-heading {
+  padding: 4px 5px 9px;
+}
+
+.participant-menu > button {
+  display: flex;
+  width: 100%;
+  padding: 7px;
+  align-items: center;
+  gap: 9px;
+  text-align: left;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.participant-menu > button:hover {
+  background: #f6efe5;
+}
+
+.participant-menu > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+  background: transparent;
+}
+
+.participant-menu > button > span:last-child {
+  min-width: 0;
+}
+
+.participant-menu > button strong,
+.participant-menu > button small {
+  display: block;
+}
+
+.participant-menu > button strong {
+  font-size: 0.73em;
+}
+
+.participant-menu > button small {
+  margin-top: 2px;
+  color: #9c8c76;
+  font-size: 0.59em;
+}
+
+.menu-empty {
+  margin: 4px;
+  color: #998a77;
+  font-size: 0.68em;
+}
+
+.avatar-wrap {
+  --avatar-accent: #a66a40;
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+}
+
+.avatar {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  overflow: hidden;
+  place-items: center;
+  border: 2px solid rgb(255 255 255 / 88%);
+  border-radius: 50%;
+  color: white;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-weight: 900;
+  background:
+    radial-gradient(circle at 32% 24%, rgb(255 255 255 / 38%), transparent 29%),
+    var(--avatar-accent);
+  box-shadow: 0 2px 8px rgb(61 38 11 / 20%);
+}
+
+.avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform-origin: center;
+}
+
+.avatar-identity-badge {
+  position: absolute;
+  z-index: 1;
+  right: -4px;
+  bottom: -3px;
+  display: block;
+  max-width: 30px;
+  padding: 1px 3px;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 92%);
+  border-radius: 999px;
+  color: white;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 7px;
+  font-weight: 900;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: #4b3b2c;
+  box-shadow: 0 1px 4px rgb(43 29 14 / 28%);
+}
+
+.avatar-small {
+  width: 25px;
+  height: 25px;
+  font-size: 0.55em;
+}
+
+.participant-button .avatar-medium {
+  width: 40px;
+  height: 40px;
+  font-size: 0.68em;
+}
+
+.avatar-large {
+  width: 56px;
+  height: 56px;
+  font-size: 0.82em;
+}
+
+.avatar-large .avatar-identity-badge {
+  right: -5px;
+  bottom: -2px;
+  max-width: 38px;
+  font-size: 8px;
+}
+
+@container participant-bar (max-width: 560px) {
+  .participant-name-line em {
+    display: none;
+  }
+
+  .participant-button {
+    flex-basis: 130px;
+  }
+}
+
+@container participant-bar (max-width: 380px) {
+  .participant-copy span {
+    display: none;
+  }
+
+  .participant-button {
+    max-width: none;
+  }
+}

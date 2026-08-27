@@ -1,0 +1,346 @@
+.room-settings-panel {
+  position: absolute;
+  z-index: 20;
+  top: 45px;
+  right: 108px;
+  width: min(350px, calc(100vw - 80px));
+  max-height: calc(100vh - 78px);
+  padding: 16px;
+  border: 1px solid rgb(99 69 28 / 12%);
+  border-radius: 17px;
+  background: #fffdf8;
+  box-shadow: 0 18px 50px rgb(69 45 14 / 24%);
+  cursor: default;
+  user-select: text;
+  overflow-y: auto;
+}
+
+.room-settings-field {
+  display: grid;
+  margin-top: 14px;
+  gap: 8px;
+  color: #6d5c46;
+  font-size: 0.7rem;
+}
+
+.room-settings-field > label,
+.room-settings-label-row strong {
+  font-weight: 900;
+}
+
+.room-name-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 7px;
+}
+
+.room-name-control input {
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid #ded3c4;
+  border-radius: 10px;
+  color: #4f402f;
+  background: white;
+}
+
+.room-name-control button,
+.room-member-row button,
+.room-profile-row button,
+.room-danger-zone button,
+.room-workspace-actions button {
+  padding: 8px 10px;
+  border: 1px solid #dfd2c1;
+  border-radius: 9px;
+  color: #684b2d;
+  font-size: 0.64rem;
+  font-weight: 900;
+  background: #f8f1e7;
+}
+
+.room-conductor-zone {
+  display: grid;
+  margin-top: 15px;
+  padding: 12px;
+  gap: 8px;
+  border: 1px solid rgb(123 63 198 / 24%);
+  border-radius: 12px;
+  background: rgb(248 242 255 / 92%);
+}
+
+.room-conductor-zone strong,
+.room-conductor-zone span,
+.room-conductor-zone label,
+.room-conductor-zone small {
+  display: block;
+}
+
+.room-conductor-zone strong {
+  color: #623493;
+  font-size: 0.68rem;
+}
+
+.room-conductor-zone span,
+.room-conductor-zone small {
+  margin-top: 3px;
+  color: #88739c;
+  font-size: 0.57rem;
+}
+
+.room-conductor-zone label {
+  color: #6f5b7f;
+  font-size: 0.58rem;
+  font-weight: 800;
+}
+
+.room-conductor-zone select {
+  width: 100%;
+  padding: 8px 9px;
+  border: 1px solid rgb(123 63 198 / 25%);
+  border-radius: 9px;
+  color: #4e315f;
+  background: white;
+}
+
+.room-name-control button:disabled,
+.room-member-row button:disabled,
+.room-profile-row button:disabled,
+.room-danger-zone button:disabled,
+.room-workspace-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.room-workspace-zone {
+  display: grid;
+  margin-top: 15px;
+  padding: 12px;
+  gap: 9px;
+  border: 1px solid #e5c98d;
+  border-radius: 12px;
+  background: #fff8e7;
+}
+
+.room-workspace-zone strong,
+.room-workspace-zone span {
+  display: block;
+}
+
+.room-workspace-zone strong {
+  color: #73501f;
+  font-size: 0.68rem;
+}
+
+.room-workspace-zone span {
+  margin-top: 3px;
+  color: #8b765b;
+  font-size: 0.57rem;
+}
+
+.room-workspace-actions {
+  display: flex;
+  gap: 7px;
+}
+
+.room-workspace-actions button {
+  color: #73501f;
+  border-color: #e5c98d;
+  background: #fffdf6;
+}
+
+.room-settings-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.room-settings-label-row span {
+  color: #9b8c78;
+  font-size: 0.6rem;
+}
+
+.room-member-list {
+  display: grid;
+  max-height: 190px;
+  gap: 5px;
+  overflow-y: auto;
+}
+
+.room-profile-list {
+  display: grid;
+  max-height: 205px;
+  gap: 5px;
+  overflow-y: auto;
+}
+
+.room-profile-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 7px 8px;
+  align-items: center;
+  gap: 9px;
+  border-radius: 10px;
+  background: #faf6ef;
+}
+
+.room-profile-row > span,
+.room-profile-row strong,
+.room-profile-row small {
+  display: block;
+  min-width: 0;
+}
+
+.room-profile-row strong {
+  overflow: hidden;
+  font-size: 0.7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-profile-row small {
+  margin-top: 2px;
+  overflow: hidden;
+  color: #9a8b78;
+  font-size: 0.55rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-member-row {
+  display: flex;
+  padding: 7px 8px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-radius: 10px;
+  background: #faf6ef;
+}
+
+.room-member-row > span,
+.room-member-row strong,
+.room-member-row small {
+  display: block;
+  min-width: 0;
+}
+
+.room-member-row strong {
+  font-size: 0.7rem;
+}
+
+.room-member-row small {
+  margin-top: 2px;
+  overflow: hidden;
+  color: #9a8b78;
+  font-size: 0.57rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-danger-zone {
+  display: flex;
+  margin-top: 15px;
+  padding-top: 13px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid #eaded1;
+}
+
+.room-data-zone {
+  display: grid;
+  margin-top: 15px;
+  padding-top: 13px;
+  gap: 9px;
+  border-top: 1px solid #eaded1;
+}
+
+.room-data-zone strong,
+.room-data-zone span {
+  display: block;
+}
+
+.room-data-zone strong {
+  color: #4e6652;
+  font-size: 0.68rem;
+}
+
+.room-data-zone span {
+  margin-top: 3px;
+  color: #9a8b78;
+  font-size: 0.57rem;
+}
+
+.room-data-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.room-data-actions button {
+  padding: 8px 10px;
+  border: 1px solid #ccd9c9;
+  border-radius: 9px;
+  color: #4e6652;
+  font-size: 0.62rem;
+  font-weight: 900;
+  background: #f0f7ee;
+}
+
+.room-data-actions button.is-armed {
+  color: white;
+  border-color: #8c5b32;
+  background: #8c5b32;
+}
+
+.room-danger-zone strong,
+.room-danger-zone span {
+  display: block;
+}
+
+.room-danger-zone strong {
+  color: #8e382e;
+  font-size: 0.68rem;
+}
+
+.room-danger-zone span,
+.protected-room-note {
+  margin-top: 3px;
+  color: #9a8b78;
+  font-size: 0.57rem;
+}
+
+.room-danger-zone button {
+  flex: 0 0 auto;
+  color: #963b31;
+  border-color: #e4bbb5;
+  background: #fff1ef;
+}
+
+.room-danger-zone button.is-armed {
+  color: white;
+  border-color: #aa3e31;
+  background: #aa3e31;
+}
+
+.protected-room-note,
+.room-settings-error {
+  margin-bottom: 0;
+}
+
+.room-settings-success {
+  margin-bottom: 0;
+  color: #39704a;
+  font-size: 0.62rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.room-settings-error {
+  color: #a03d2f;
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.room-settings-button {
+  color: #725536;
+  background: rgb(255 248 225 / 72%);
+}

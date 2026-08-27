@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "0.1.0",
+  "generatedAt": "2026-08-12T00:00:00+09:00",
+  "participants": [
+    {
+      "id": "owner",
+      "displayName": "Owner",
+      "kind": "human"
+    },
+    {
+      "id": "claude-web",
+      "displayName": "Claude Web",
+      "kind": "ai"
+    },
+    {
+      "id": "codex",
+      "displayName": "Codex",
+      "kind": "ai"
+    },
+    {
+      "id": "gemini",
+      "displayName": "Gemini",
+      "kind": "ai"
+    }
+  ],
+  "rooms": [
+    {
+      "id": "moe-dev-room",
+      "name": "M.O.E.開発室",
+      "participantIds": [
+        "owner",
+        "claude-web",
+        "codex",
+        "gemini"
+      ],
+      "messages": [
+        {
+          "id": "welcome-1",
+          "roomId": "moe-dev-room",
+          "authorId": "owner",
+          "recipients": [
+            "claude-web",
+            "codex",
+            "gemini"
+          ],
+          "body": "みんな、M.O.E.のトークルームUIを作っていきましょうー。",
+          "createdAt": "2026-08-11T19:42:00+09:00",
+          "artifactIds": []
+        },
+        {
+          "id": "welcome-2",
+          "roomId": "moe-dev-room",
+          "authorId": "codex",
+          "recipients": [
+            "owner"
+          ],
+          "body": "了解です。ルーム参加者と、メッセージごとの宛先を分けておきますね。",
+          "createdAt": "2026-08-11T19:42:30+09:00",
+          "artifactIds": []
+        },
+        {
+          "id": "welcome-3",
+          "roomId": "moe-dev-room",
+          "authorId": "claude-web",
+          "recipients": [
+            "owner"
+          ],
+          "body": "背景やアイコンを自分好みにできる余白も、最初から確保しておきます。",
+          "createdAt": "2026-08-11T19:43:00+09:00",
+          "artifactIds": []
+        }
+      ]
+    }
+  ]
+}

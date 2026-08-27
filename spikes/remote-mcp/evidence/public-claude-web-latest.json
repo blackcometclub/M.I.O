@@ -1,0 +1,51 @@
+{
+  "observedAt": "2026-08-12T00:22:40.9881708+09:00",
+  "result": "PASS",
+  "scope": "temporary Claude Web Remote MCP roundtrip",
+  "claudePlanObserved": "free",
+  "connector": {
+    "name": "M.O.E. Local Test",
+    "transport": "Streamable HTTP over temporary HTTPS",
+    "oauthConfigured": false,
+    "publicUrlPersistedInEvidence": false
+  },
+  "tunnel": {
+    "provider": "TryCloudflare Quick Tunnel",
+    "cloudflaredVersion": "2026.7.3",
+    "sha256": "8635DA433B6DF8194746E88ED9D2589566C20E38BFC2A80E431A348B7C765841",
+    "authenticode": "Valid; Cloudflare, Inc.",
+    "protocol": "HTTP/2",
+    "stoppedAfterTest": true
+  },
+  "safety": {
+    "secretPath": true,
+    "allowedHost": "exact temporary hostname only",
+    "firstUnlistedHostAttempt": "403 Invalid Host",
+    "toolApproval": "one-time",
+    "alwaysAllowSelected": false,
+    "fileAccess": false,
+    "shellAccess": false,
+    "writeTools": false,
+    "serverStoppedAfterTest": true,
+    "portClosedAfterTest": true,
+    "secretFilesRemovedAfterTest": true
+  },
+  "claudeWebCall": {
+    "tool": "ping_moe",
+    "invocationCount": 1,
+    "status": "PASS",
+    "observedResult": {
+      "ok": true,
+      "service": "moe-remote-mcp-spike"
+    }
+  },
+  "remaining": [
+    "production authentication or device pairing",
+    "persistent relay",
+    "desktop outbound link",
+    "moe_read_room",
+    "moe_get_artifact",
+    "disconnect and retry behavior",
+    "idempotency"
+  ]
+}

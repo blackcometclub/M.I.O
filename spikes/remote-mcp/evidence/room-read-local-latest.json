@@ -1,0 +1,40 @@
+{
+  "observedAt": "2026-08-12T00:45:19.9832912+09:00",
+  "result": "PASS",
+  "scope": "local runtime-backed moe_read_room preflight",
+  "tool": {
+    "name": "moe_read_room",
+    "readOnly": true,
+    "idempotent": true,
+    "acceptedInput": [
+      "roomId",
+      "afterMessageId",
+      "limit"
+    ],
+    "maxLimit": 30,
+    "acceptsFilesystemPath": false
+  },
+  "runtimeObservation": {
+    "roomId": "moe-dev-room",
+    "afterMessageId": "welcome-3",
+    "limit": 1,
+    "returned": 1,
+    "messageId": "probe-runtime-message",
+    "marker": "REMOTE_ROOM_RUNTIME_OK",
+    "markerWasAddedAtProbeRuntime": true
+  },
+  "negativeCases": {
+    "unknownRoom": "PASS: room_not_found",
+    "unknownCursor": "PASS: cursor_not_found",
+    "snapshotOutsideRuntime": "PASS: rejected at host configuration boundary",
+    "missingOrInvalidSnapshot": "implemented as room_snapshot_unavailable"
+  },
+  "boundaries": {
+    "snapshotRoot": "spikes/remote-mcp/runtime only",
+    "desktopConnection": "not implemented",
+    "relayPersistence": "not implemented",
+    "artifactContent": "not returned",
+    "writeCapability": false
+  },
+  "nextManualBoundary": "Completed separately; see room-read-claude-web-latest.json."
+}

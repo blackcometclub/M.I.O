@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "M.O.E. Google AI Bridge (PoC)",
+  "version": "0.2.0",
+  "description": "Google Search / AI ModeとM.O.E.を、利用者確認つきで往復接続します。",
+  "permissions": [
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:38473/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.google.com/search*",
+        "https://www.google.com/ai*",
+        "https://www.google.co.jp/search*",
+        "https://www.google.co.jp/ai*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

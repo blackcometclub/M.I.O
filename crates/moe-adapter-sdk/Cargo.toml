@@ -1,0 +1,9 @@
+[package]
+name = "moe-adapter-sdk"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+moe-protocol = { path = "../moe-protocol" }

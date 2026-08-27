@@ -1,0 +1,34 @@
+# Dependencies and build output
+node_modules/
+.npm-cache/
+.tools/
+dist/
+build/
+coverage/
+target/
+apps/desktop/src-tauri/gen/
+
+# Local M.O.E. state and artifacts
+.moe/
+artifacts/
+logs/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Tool and editor state
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.tmp
+
+# Test and diagnostic output
+*.log
+*.tsbuildinfo
+test-results/
+playwright-report/

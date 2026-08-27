@@ -1,0 +1,234 @@
+.conversation-panel {
+  grid-column: 1;
+  grid-row: 3;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgb(111 78 31 / 13%);
+  border-radius: 19px;
+  background:
+    radial-gradient(circle at 88% 15%, rgb(255 221 154 / 34%), transparent 24%),
+    rgb(255 251 241 / 91%);
+  box-shadow:
+    0 10px 24px rgb(106 66 7 / 12%),
+    inset 0 1px rgb(255 255 255 / 80%);
+}
+
+.artwork-stage {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: grid;
+  grid-template-columns: var(--workbench-sidebar-width) minmax(0, 1fr);
+  gap: var(--workbench-gap);
+  pointer-events: none;
+}
+
+.artwork-canvas-clip {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.artwork-canvas-clip-sidebar {
+  grid-column: 1;
+  border-radius: 25px;
+}
+
+.artwork-canvas-clip-workspace {
+  grid-column: 2;
+  border-radius: 28px;
+}
+
+.artwork-canvas-clip > img {
+  position: absolute;
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  transform-origin: center;
+  user-select: none;
+}
+
+.room-workspace.has-custom-background .conversation-panel {
+  background:
+    radial-gradient(circle at 88% 15%, rgb(255 221 154 / 24%), transparent 24%),
+    rgb(255 251 241 / 82%);
+  backdrop-filter: blur(5px);
+}
+
+.conversation-scroll {
+  height: 100%;
+  padding: clamp(14px, 2.1vw, 27px);
+  overflow-y: auto;
+  scrollbar-color: #d8c4a8 transparent;
+  scrollbar-width: thin;
+}
+
+.message-row {
+  display: flex;
+  max-width: min(760px, 83%);
+  margin-bottom: 17px;
+  align-items: flex-start;
+  gap: 11px;
+}
+
+.message-row.is-user {
+  margin-left: auto;
+  flex-direction: row-reverse;
+}
+
+.message-content {
+  min-width: 0;
+}
+
+.message-content > header {
+  display: flex;
+  min-width: 0;
+  margin: 0 4px 5px;
+  align-items: center;
+  gap: 7px;
+}
+
+.message-row.is-user .message-content > header {
+  justify-content: flex-end;
+}
+
+.message-content > header strong {
+  font-size: 0.72em;
+}
+
+.message-content > header span,
+.message-content > header time {
+  color: #a19584;
+  font-size: 0.58em;
+}
+
+.message-content > header .participant-canonical-name {
+  padding: 1px 5px;
+  border: 1px solid rgb(170 107 38 / 17%);
+  border-radius: 999px;
+  color: #8f5b24;
+  font-size: 0.51em;
+  font-weight: 900;
+  background: rgb(255 244 221 / 72%);
+}
+
+.message-content > header time {
+  margin-left: auto;
+}
+
+.message-row.is-user .message-content > header time {
+  margin-left: 0;
+}
+
+.message-bubble {
+  padding: 11px 13px 8px;
+  border: 1px solid #e7ddcf;
+  border-radius: 5px 16px 16px;
+  color: #463723;
+  background: #fff;
+  box-shadow: 0 4px 12px rgb(61 46 24 / 7%);
+}
+
+.message-row.is-user .message-bubble {
+  border-color: #e4bd5d;
+  border-radius: 16px 5px 16px 16px;
+  background: #fff0bb;
+}
+
+.message-bubble p {
+  margin: 0;
+  font-size: 0.79em;
+  line-height: 1.62;
+  white-space: pre-wrap;
+}
+
+.message-bubble footer {
+  display: flex;
+  min-height: 16px;
+  margin-top: 6px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #a29480;
+  font-size: 0.55em;
+}
+
+.message-provenance {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.message-bubble footer em {
+  padding: 2px 5px;
+  border-radius: 5px;
+  color: #845f22;
+  font-size: 0.87em;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  background: #f9e8bf;
+}
+
+.typing-row {
+  display: flex;
+  width: fit-content;
+  padding: 7px 11px 7px 7px;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  color: #8d806e;
+  font-size: 0.62em;
+  background: rgb(255 255 255 / 70%);
+}
+
+.typing-row i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #a59278;
+  animation: typing-pulse 900ms infinite alternate;
+}
+
+.typing-row i:nth-last-child(2) {
+  animation-delay: 180ms;
+}
+
+.typing-row i:last-child {
+  animation-delay: 360ms;
+}
+
+@keyframes typing-pulse {
+  to {
+    opacity: 0.3;
+    transform: translateY(-2px);
+  }
+}
+
+.empty-conversation {
+  display: grid;
+  height: 100%;
+  min-height: 180px;
+  place-content: center;
+  justify-items: center;
+  color: #9a8b76;
+  text-align: center;
+}
+
+.empty-conversation > span {
+  font-size: 1.7em;
+}
+
+.empty-conversation strong {
+  margin-top: 8px;
+  color: #695740;
+  font-size: 0.83em;
+}
+
+.empty-conversation p {
+  margin: 5px 0 0;
+  font-size: 0.68em;
+}

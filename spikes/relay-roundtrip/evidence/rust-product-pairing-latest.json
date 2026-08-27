@@ -1,0 +1,15 @@
+{
+  "result": "PASS",
+  "date": "2026-08-12T01:40:32.037Z",
+  "path": "Node loopback Relay /pair -> Rust pairing transport -> moe-relay-client -> Windows Credential Manager",
+  "pairingCodeOnCommandLine": false,
+  "pairingCodeInOutput": false,
+  "rejectedCodeHandled": true,
+  "deviceCredentialEnteredWebView": false,
+  "deviceCredentialReturnedToOrchestrator": false,
+  "credentialStoredByProductManager": true,
+  "probeCredentialRemoved": true,
+  "relayRawPairingCodesStored": false,
+  "relayRawDeviceCredentialsStored": false,
+  "publicNetworkUsed": false
+}

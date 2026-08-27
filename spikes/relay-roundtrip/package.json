@@ -1,0 +1,13 @@
+{
+  "name": "@moe/relay-roundtrip-spike",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-only outbound Desktop-to-Relay roundtrip spike",
+  "scripts": {
+    "test": "node probe-roundtrip.mjs",
+    "test:pairing": "node probe-pairing.mjs",
+    "test:rust-product-pairing": "node probe-rust-product-pairing.mjs",
+    "test:rust-product-connection": "node probe-rust-product-connection.mjs"
+  }
+}

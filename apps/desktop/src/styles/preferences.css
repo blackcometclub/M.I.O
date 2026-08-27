@@ -1,0 +1,55 @@
+.preferences-panel {
+  position: absolute;
+  z-index: 20;
+  top: 45px;
+  right: 54px;
+  width: min(330px, calc(100vw - 80px));
+  padding: 16px;
+  border: 1px solid rgb(99 69 28 / 12%);
+  border-radius: 17px;
+  background: #fffdf8;
+  box-shadow: 0 18px 50px rgb(69 45 14 / 24%);
+  cursor: default;
+  font-family: Inter, "Yu Gothic UI", "Hiragino Kaku Gothic ProN", system-ui, sans-serif;
+  user-select: text;
+}
+
+.preference-field {
+  display: grid;
+  margin-top: 15px;
+  gap: 7px;
+  color: #6d5c46;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.preference-field > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.preference-field select {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid #ded3c4;
+  border-radius: 10px;
+  color: #4f402f;
+  background: white;
+}
+
+.font-family-select {
+  font-family: Inter, "Yu Gothic UI", "Hiragino Kaku Gothic ProN", system-ui, sans-serif;
+}
+
+.preference-field input[type="range"] { width: 100%; accent-color: #c56d20; }
+.preference-field output { color: #a05c18; }
+.preference-field small { color: #9a8d7b; font-size: 0.58rem; font-weight: 600; line-height: 1.4; }
+.preference-note { margin: 14px 0 0; color: #9a8d7b; font-size: 0.59rem; line-height: 1.45; }
+
+.preferences-button {
+  color: #5f526f;
+  background: rgb(255 248 225 / 72%);
+  font-size: 0.62rem;
+  font-weight: 900;
+}

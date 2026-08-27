@@ -1,0 +1,42 @@
+.appearance-panel,
+.preferences-panel,
+.participant-menu {
+  position: absolute;
+  z-index: 20;
+  border: 1px solid rgb(99 69 28 / 12%);
+  border-radius: 17px;
+  background: #fffdf8;
+  box-shadow: 0 18px 50px rgb(69 45 14 / 24%);
+}
+
+.popover-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.popover-heading strong,
+.popover-heading span {
+  display: block;
+}
+
+.popover-heading strong {
+  font-size: 0.82rem;
+}
+
+.popover-heading span {
+  margin-top: 2px;
+  color: #9b8c78;
+  font-size: 0.64rem;
+}
+
+.popover-heading > button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: #f2ece3;
+  cursor: pointer;
+}

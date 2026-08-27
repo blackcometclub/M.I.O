@@ -1,0 +1,9 @@
+{
+  "name": "@moe/spike-claude-code-stream",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "probe:handshake": "node ./probe-handshake.mjs"
+  }
+}

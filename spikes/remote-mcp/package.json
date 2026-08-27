@@ -1,0 +1,18 @@
+{
+  "name": "@moe/remote-mcp-spike",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Read-only Streamable HTTP MCP spike for Claude Web",
+  "scripts": {
+    "start": "node server.mjs",
+    "prepare:public-room": "node prepare-public-room.mjs",
+    "test": "node probe-roundtrip.mjs",
+    "test:relay-integration": "node probe-relay-integration.mjs",
+    "test:public": "node probe-public.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "zod": "4.4.3"
+  }
+}

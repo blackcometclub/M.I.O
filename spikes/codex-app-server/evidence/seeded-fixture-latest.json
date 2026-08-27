@@ -1,0 +1,177 @@
+{
+  "probe": "codex-app-server-seeded-fixture",
+  "status": "PASS",
+  "startedAt": "2026-08-11T14:07:08.425Z",
+  "elapsedMs": 61397,
+  "launcherSource": "global-npm-codex",
+  "transport": "stdio",
+  "fixtureRoot": "<repository-root>\\spikes\\fixtures\\seeded-bug-app",
+  "configured": {
+    "approvalPolicy": "on-request",
+    "approvalsReviewer": "user",
+    "sandboxType": "readOnly",
+    "ephemeral": true,
+    "allowedRelativePaths": [
+      "src/delivery-plan.mjs"
+    ],
+    "protectedRelativePaths": [
+      "package.json",
+      "sentinel.txt",
+      "SPEC.md",
+      "test/delivery-plan.test.mjs",
+      "ui-state.svg"
+    ]
+  },
+  "threadId": "<redacted>",
+  "turnId": "<redacted>",
+  "assertions": {
+    "initialFailureConfirmed": true,
+    "turnCompleted": true,
+    "fileApprovalObserved": true,
+    "allFileApprovalsAccepted": true,
+    "approvalScopeLimited": true,
+    "approvalEventOrderCorrect": true,
+    "noCommandApproval": true,
+    "onlyAllowedSourceChanged": true,
+    "protectedFilesUnchanged": true,
+    "sentinelUnchanged": true,
+    "sourceActuallyChanged": true,
+    "finalTestsPassed": true,
+    "explanationProvided": true
+  },
+  "initialTest": {
+    "exitCode": 1,
+    "signal": null,
+    "output": "✔ 未選択の参加者しかいない場合は配送を止める (1.2694ms)\n✔ 接続済みと未接続の選択先を分ける (0.19ms)\n✖ 未選択の古いregistry行は同じIDの選択済み行を隠さない (1.3049ms)\nℹ tests 3\nℹ suites 0\nℹ pass 2\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 112.461\n\n✖ failing tests:\n\ntest at test\\delivery-plan.test.mjs:54:1\n✖ 未選択の古いregistry行は同じIDの選択済み行を隠さない (1.3049ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n  + actual - expected\n  \n    {\n      blockedRecipients: [\n        {\n          adapterInstanceId: 'claude-code-qa',\n          displayName: 'Claude Code'\n        }\n      ],\n  +   reason: 'all_selected_offline',\n  +   recipients: [],\n  +   status: 'blocked',\n  +   warning: null\n  -   reason: null,\n  -   recipients: [\n  -     {\n  -       adapterInstanceId: 'codex-local-main',\n  -       displayName: 'Codex'\n  -     }\n  -   ],\n  -   status: 'ready',\n  -   warning: 'some_selected_offline'\n    }\n  \n      at TestContext.<anonymous> (file:///<repository-root>/spikes/fixtures/seeded-bug-app/runtime/test/delivery-plan.test.mjs:76:10)\n      at Test.runInAsyncScope (node:async_hooks:228:14)\n      at Test.run (node:internal/test_runner/test:1118:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)\n      at Test.postRun (node:internal/test_runner/test:1247:19)\n      at Test.run (node:internal/test_runner/test:1175:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: { status: 'blocked', reason: 'all_selected_offline', warning: null, recipients: [], blockedRecipients: [ [Object] ] },\n    expected: { status: 'ready', reason: null, warning: 'some_selected_offline', recipients: [ [Object] ], blockedRecipients: [ [Object] ] },\n    operator: 'deepStrictEqual',\n    diff: 'simple'\n  }"
+  },
+  "finalTest": {
+    "exitCode": 0,
+    "signal": null,
+    "output": "✔ 未選択の参加者しかいない場合は配送を止める (1.485ms)\n✔ 接続済みと未接続の選択先を分ける (0.3713ms)\n✔ 未選択の古いregistry行は同じIDの選択済み行を隠さない (0.2787ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 122.6531"
+  },
+  "changedPaths": [
+    "src/delivery-plan.mjs"
+  ],
+  "sourceDiff": "--- baseline/src/delivery-plan.mjs\n+++ runtime/src/delivery-plan.mjs\n@@ -1,56 +1,58 @@\n-function toRecipient(participant) {\n-  return {\n-    adapterInstanceId: participant.adapterInstanceId,\n-    displayName: participant.displayName,\n-  };\n-}\n-\n-export function buildDeliveryPlan(participants) {\n-  const uniqueByAdapter = new Map();\n-\n-  for (const participant of participants) {\n-    if (!uniqueByAdapter.has(participant.adapterInstanceId)) {\n-      uniqueByAdapter.set(participant.adapterInstanceId, participant);\n-    }\n-  }\n-\n-  const selected = [...uniqueByAdapter.values()].filter(\n-    (participant) => participant.selected,\n-  );\n-  const recipients = selected\n-    .filter((participant) => participant.connection === \"connected\")\n-    .map(toRecipient);\n-  const blockedRecipients = selected\n-    .filter((participant) => participant.connection !== \"connected\")\n-    .map(toRecipient);\n-\n-  if (selected.length === 0) {\n-    return {\n-      status: \"blocked\",\n-      reason: \"no_recipients\",\n-      warning: null,\n-      recipients,\n-      blockedRecipients,\n-    };\n-  }\n-\n-  if (recipients.length === 0) {\n-    return {\n-      status: \"blocked\",\n-      reason: \"all_selected_offline\",\n-      warning: null,\n-      recipients,\n-      blockedRecipients,\n-    };\n-  }\n-\n-  return {\n-    status: \"ready\",\n-    reason: null,\n-    warning:\n-      blockedRecipients.length > 0 ? \"some_selected_offline\" : null,\n-    recipients,\n-    blockedRecipients,\n-  };\n-}\n-\n+function toRecipient(participant) {\n+  return {\n+    adapterInstanceId: participant.adapterInstanceId,\n+    displayName: participant.displayName,\n+  };\n+}\n+\n+export function buildDeliveryPlan(participants) {\n+  const uniqueByAdapter = new Map();\n+\n+  for (const participant of participants) {\n+    if (!participant.selected) {\n+      continue;\n+    }\n+\n+    if (!uniqueByAdapter.has(participant.adapterInstanceId)) {\n+      uniqueByAdapter.set(participant.adapterInstanceId, participant);\n+    }\n+  }\n+\n+  const selected = [...uniqueByAdapter.values()];\n+  const recipients = selected\n+    .filter((participant) => participant.connection === \"connected\")\n+    .map(toRecipient);\n+  const blockedRecipients = selected\n+    .filter((participant) => participant.connection !== \"connected\")\n+    .map(toRecipient);\n+\n+  if (selected.length === 0) {\n+    return {\n+      status: \"blocked\",\n+      reason: \"no_recipients\",\n+      warning: null,\n+      recipients,\n+      blockedRecipients,\n+    };\n+  }\n+\n+  if (recipients.length === 0) {\n+    return {\n+      status: \"blocked\",\n+      reason: \"all_selected_offline\",\n+      warning: null,\n+      recipients,\n+      blockedRecipients,\n+    };\n+  }\n+\n+  return {\n+    status: \"ready\",\n+    reason: null,\n+    warning:\n+      blockedRecipients.length > 0 ? \"some_selected_offline\" : null,\n+    recipients,\n+    blockedRecipients,\n+  };\n+}\n+",
+  "fileApprovalRequests": [
+    {
+      "sequence": 216,
+      "id": 0,
+      "method": "item/fileChange/requestApproval",
+      "threadId": "<redacted>",
+      "turnId": "<redacted>",
+      "itemId": "<redacted>",
+      "reason": null,
+      "grantRoot": null,
+      "paths": [
+        "<repository-root>\\spikes\\fixtures\\seeded-bug-app\\runtime\\src\\delivery-plan.mjs"
+      ],
+      "decision": "accept"
+    }
+  ],
+  "commandApprovalRequestCount": 0,
+  "approvalFlow": [
+    {
+      "itemStartedSequence": 214,
+      "approvalRequestedSequence": 216,
+      "requestResolvedSequence": 217,
+      "itemCompletedSequence": 219,
+      "terminalStatus": "completed",
+      "orderCorrect": true
+    }
+  ],
+  "normalizedEvents": [
+    {
+      "type": "job.started",
+      "sequence": 10,
+      "externalTurnId": "<redacted>"
+    },
+    {
+      "type": "approval.requested",
+      "sequence": 216,
+      "requestId": "0",
+      "decision": "accept",
+      "paths": [
+        "src/delivery-plan.mjs"
+      ]
+    },
+    {
+      "type": "approval.resolved",
+      "sequence": 217,
+      "terminalStatus": "completed"
+    },
+    {
+      "type": "job.completed",
+      "sequence": 285,
+      "status": "completed"
+    }
+  ],
+  "finalAgentText": "ROOT_CAUSE: Deduplication occurred before filtering selected participants, so an earlier unselected duplicate hid the selected entry.\nCHANGED: src/delivery-plan.mjs\nTEST: node --test\nSENTINEL: unchanged",
+  "initialInventory": {
+    "package.json": {
+      "size": 143,
+      "sha256": "88df800dad532c01261c8f5b4593b2eb97dd7d340d689d336a47f54f1985b6db"
+    },
+    "sentinel.txt": {
+      "size": 25,
+      "sha256": "f603f97af62d0104eada504121031f00aea6ad4584245c19cd9aa28cae582e8f"
+    },
+    "SPEC.md": {
+      "size": 1157,
+      "sha256": "f6f1a0e6f34f41607d423b82e38922efd45921675f3370080a7dc5dcfd6991a4"
+    },
+    "src/delivery-plan.mjs": {
+      "size": 1324,
+      "sha256": "c46dd6a0650791b06d581c65e626c0feddb7f2c3e8ef0d351e2970a6d50963a3"
+    },
+    "test/delivery-plan.test.mjs": {
+      "size": 2160,
+      "sha256": "98028386e00b2b21ad9821da0a81932be689ef9c7e02dd5052af4969dd7d4508"
+    },
+    "ui-state.svg": {
+      "size": 1076,
+      "sha256": "c2a597916053269b624aac39ac2906737ccc1e4f73e4ce768ff3c96e9a2a2966"
+    }
+  },
+  "finalInventory": {
+    "package.json": {
+      "size": 143,
+      "sha256": "88df800dad532c01261c8f5b4593b2eb97dd7d340d689d336a47f54f1985b6db"
+    },
+    "sentinel.txt": {
+      "size": 25,
+      "sha256": "f603f97af62d0104eada504121031f00aea6ad4584245c19cd9aa28cae582e8f"
+    },
+    "SPEC.md": {
+      "size": 1157,
+      "sha256": "f6f1a0e6f34f41607d423b82e38922efd45921675f3370080a7dc5dcfd6991a4"
+    },
+    "src/delivery-plan.mjs": {
+      "size": 1325,
+      "sha256": "c4c4d58b114ead2e3122106d00b14c739331b554a2912c09d5c76973df72e430"
+    },
+    "test/delivery-plan.test.mjs": {
+      "size": 2160,
+      "sha256": "98028386e00b2b21ad9821da0a81932be689ef9c7e02dd5052af4969dd7d4508"
+    },
+    "ui-state.svg": {
+      "size": 1076,
+      "sha256": "c2a597916053269b624aac39ac2906737ccc1e4f73e4ce768ff3c96e9a2a2966"
+    }
+  },
+  "notificationCounts": {
+    "account/rateLimits/updated": 5,
+    "item/agentMessage/delta": 224,
+    "item/completed": 14,
+    "item/started": 14,
+    "mcpServer/startupStatus/updated": 6,
+    "remoteControl/status/changed": 1,
+    "serverRequest/resolved": 1,
+    "thread/started": 1,
+    "thread/status/changed": 4,
+    "thread/tokenUsage/updated": 5,
+    "turn/completed": 1,
+    "turn/diff/updated": 4,
+    "turn/started": 1
+  }
+}

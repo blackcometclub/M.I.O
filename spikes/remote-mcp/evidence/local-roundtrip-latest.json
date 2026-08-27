@@ -1,0 +1,36 @@
+{
+  "observedAt": "2026-08-12T00:08:57.9901663+09:00",
+  "result": "PASS",
+  "scope": "local-only preflight",
+  "sdk": {
+    "name": "@modelcontextprotocol/sdk",
+    "version": "1.30.0"
+  },
+  "transport": "Streamable HTTP (JSON response, stateless)",
+  "endpoint": "http://127.0.0.1:<ephemeral>/<secret>/mcp",
+  "tools": [
+    {
+      "name": "ping_moe",
+      "readOnly": true,
+      "idempotent": true
+    },
+    {
+      "name": "moe_status",
+      "readOnly": true,
+      "idempotent": true
+    }
+  ],
+  "observations": {
+    "initialize": "PASS",
+    "toolsList": "PASS",
+    "pingMoe": "PASS",
+    "moeStatus": "PASS",
+    "publicExposure": false,
+    "authentication": "not implemented",
+    "desktopConnection": "not implemented",
+    "fileAccess": false,
+    "shellAccess": false,
+    "writeTools": false
+  },
+  "nextManualBoundary": "Completed in public-claude-web-latest.json."
+}

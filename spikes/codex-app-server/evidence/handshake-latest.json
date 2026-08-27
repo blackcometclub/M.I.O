@@ -1,0 +1,30 @@
+{
+  "probe": "codex-app-server-handshake",
+  "status": "PASS",
+  "startedAt": "2026-08-11T13:12:00.271Z",
+  "elapsedMs": 12919,
+  "launcherSource": "global-npm-codex",
+  "transport": "stdio",
+  "serverUserAgent": "<redacted>",
+  "platformFamily": "windows",
+  "platformOs": "windows",
+  "threadId": "<redacted>",
+  "turnId": "<redacted>",
+  "turnStatus": "completed",
+  "markerObserved": true,
+  "finalText": "MOE_APP_SERVER_OK",
+  "notificationCounts": {
+    "account/rateLimits/updated": 1,
+    "item/agentMessage/delta": 5,
+    "item/completed": 2,
+    "item/started": 2,
+    "mcpServer/startupStatus/updated": 6,
+    "remoteControl/status/changed": 1,
+    "thread/started": 1,
+    "thread/status/changed": 2,
+    "thread/tokenUsage/updated": 1,
+    "turn/completed": 1,
+    "turn/started": 1
+  },
+  "serverRequestMethods": []
+}

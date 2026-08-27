@@ -1,0 +1,48 @@
+{
+  "observedAt": "2026-08-12T00:57:05.7008692+09:00",
+  "result": "PASS",
+  "scope": "Claude Web Free remote moe_read_room roundtrip",
+  "connector": "M.O.E. Local Test",
+  "transport": {
+    "kind": "temporary TryCloudflare Quick Tunnel",
+    "protocol": "HTTPS Streamable HTTP",
+    "publicUrlPersisted": false,
+    "secretPathPersisted": false
+  },
+  "approvedPayload": {
+    "kind": "demo room snapshot only",
+    "roomId": "moe-dev-room",
+    "containsRealConversationHistory": false,
+    "containsFilesystemContent": false
+  },
+  "toolCall": {
+    "name": "moe_read_room",
+    "arguments": {
+      "roomId": "moe-dev-room",
+      "afterMessageId": "welcome-3",
+      "limit": 1
+    },
+    "approval": "allow once",
+    "alwaysAllowSelected": false,
+    "otherToolsCalled": false
+  },
+  "observedResult": {
+    "messageId": "claude-web-room-probe",
+    "body": "CLAUDE_WEB_ROOM_RUNTIME_OK"
+  },
+  "cleanup": {
+    "serverStopped": true,
+    "tunnelStopped": true,
+    "port3108Closed": true,
+    "runtimeSnapshotRemoved": true,
+    "secretSessionFileRemoved": true
+  },
+  "remainingBoundaries": [
+    "desktop outbound link",
+    "authentication or device pairing",
+    "persistent relay",
+    "artifact transfer",
+    "disconnect recovery",
+    "request idempotency"
+  ]
+}

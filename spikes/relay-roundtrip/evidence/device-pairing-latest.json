@@ -1,0 +1,53 @@
+{
+  "observedAt": "2026-08-12T01:31:00.8996569+09:00",
+  "result": "PASS",
+  "scope": "local Relay to Desktop device pairing contract",
+  "pairingCode": {
+    "shape": "XXXX-XXXX",
+    "alphabet": "unambiguous uppercase letters and digits",
+    "defaultLifetimeSeconds": 60,
+    "singleUse": true,
+    "wrongAttemptDecrementsBudget": true,
+    "maximumAttempts": 5,
+    "expiredCodeRejected": "pairing_code_expired",
+    "reusedCodeRejected": "pairing_code_used",
+    "attemptLimitRejected": "pairing_code_locked"
+  },
+  "deviceCredential": {
+    "entropyBytes": 32,
+    "pairedConnection": "PASS",
+    "credentialBoundToDeviceId": true,
+    "revocationDisconnectedActiveDevice": true,
+    "revokedCredentialRejected": "device_unauthorized",
+    "rePairingAfterRevocation": "PASS"
+  },
+  "roomObservation": {
+    "messageId": "paired-device-message",
+    "marker": "DEVICE_PAIRING_ROOM_OK"
+  },
+  "storageBoundary": {
+    "rawPairingCodesStored": false,
+    "rawDeviceCredentialsStored": false,
+    "hashing": "HMAC-SHA-256 with process-memory key",
+    "secretPersistence": "memory-only",
+    "roomDataStoredByRelay": false
+  },
+  "networkBoundary": {
+    "bind": "127.0.0.1:<ephemeral>",
+    "publicNetworkUsed": false,
+    "productionCredentialUsed": false
+  },
+  "cleanup": {
+    "relayStopped": true,
+    "desktopLinkClosed": true,
+    "runtimeSnapshotRemoved": true
+  },
+  "remainingBoundaries": [
+    "encrypted persistent credential storage on Desktop",
+    "server-side persistent credential records",
+    "credential rotation and multi-device management UI",
+    "TLS and production Relay deployment",
+    "pairing approval UI and user-presence confirmation",
+    "audit log without secrets"
+  ]
+}

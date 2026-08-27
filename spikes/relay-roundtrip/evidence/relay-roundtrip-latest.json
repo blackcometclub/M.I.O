@@ -1,0 +1,54 @@
+{
+  "observedAt": "2026-08-12T01:05:28.4141460+09:00",
+  "result": "PASS",
+  "scope": "local Desktop outbound Relay room roundtrip",
+  "transport": {
+    "kind": "persistent bidirectional HTTP NDJSON stream",
+    "bind": "127.0.0.1:<ephemeral>",
+    "publicNetworkUsed": false,
+    "productionTransport": false
+  },
+  "authentication": {
+    "kind": "ephemeral probe-only bearer token",
+    "wrongTokenRejected": true,
+    "productionAuthentication": false
+  },
+  "correlation": {
+    "concurrentRequests": 2,
+    "earlierMessageId": "welcome-2",
+    "latestMessageId": "relay-runtime-message",
+    "responsesMatchedRequests": true
+  },
+  "roomObservation": {
+    "roomId": "moe-dev-room",
+    "marker": "DESKTOP_RELAY_ROOM_OK",
+    "snapshotLocation": "Desktop side only",
+    "relayRetainedRoomCount": 0
+  },
+  "failureRecovery": {
+    "offlineRead": "PASS: desktop_offline",
+    "reconnect": "PASS",
+    "readAfterReconnect": "PASS"
+  },
+  "inputBoundary": {
+    "accepted": [
+      "roomId",
+      "afterMessageId",
+      "limit"
+    ],
+    "rawFilesystemPathRejected": true
+  },
+  "cleanup": {
+    "relayStopped": true,
+    "desktopLinksClosed": true,
+    "runtimeSnapshotRemoved": true
+  },
+  "remainingBoundaries": [
+    "TLS and WSS or equivalent production transport",
+    "persistent credential storage and rotation",
+    "public Relay deployment",
+    "artifact transfer",
+    "write idempotency",
+    "bounded pending request behavior during disconnect"
+  ]
+}

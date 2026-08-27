@@ -1,0 +1,234 @@
+{
+  "probe": "codex-app-server-file-change-approval",
+  "status": "PASS",
+  "startedAt": "2026-08-11T13:57:49.608Z",
+  "elapsedMs": 31522,
+  "launcherSource": "global-npm-codex",
+  "transport": "stdio",
+  "fixtureRoot": "<repository-root>\\spikes\\fixtures\\approval-sandbox",
+  "deny": {
+    "name": "deny",
+    "status": "PASS",
+    "decision": "decline",
+    "elapsedMs": 14893,
+    "threadId": "<redacted>",
+    "turnId": "<redacted>",
+    "turnStatus": "completed",
+    "configured": {
+      "approvalPolicy": "on-request",
+      "approvalsReviewer": "user",
+      "sandboxType": "readOnly",
+      "ephemeral": true
+    },
+    "approvalRequests": [
+      {
+        "sequence": 44,
+        "id": 0,
+        "method": "item/fileChange/requestApproval",
+        "threadId": "<redacted>",
+        "turnId": "<redacted>",
+        "itemId": "<redacted>",
+        "reason": null,
+        "grantRoot": null,
+        "decision": "decline"
+      }
+    ],
+    "commandApprovalRequestCount": 0,
+    "resolvedRequestIds": [
+      "0"
+    ],
+    "approvalResolved": true,
+    "approvalFlow": [
+      {
+        "itemStartedSequence": 42,
+        "approvalRequestedSequence": 44,
+        "requestResolvedSequence": 45,
+        "itemCompletedSequence": 47,
+        "orderCorrect": true
+      }
+    ],
+    "fileChangeScopeCorrect": true,
+    "fileItems": [
+      {
+        "sequence": 42,
+        "event": "item/started",
+        "itemId": "<redacted>",
+        "status": "inProgress",
+        "paths": [
+          "<repository-root>\\spikes\\fixtures\\approval-sandbox\\runtime\\target.txt"
+        ]
+      },
+      {
+        "sequence": 47,
+        "event": "item/completed",
+        "itemId": "<redacted>",
+        "status": "declined",
+        "paths": [
+          "<repository-root>\\spikes\\fixtures\\approval-sandbox\\runtime\\target.txt"
+        ]
+      }
+    ],
+    "finalAgentText": "<user>、編集が承認されなかったため、`target.txt` は変更されていません。`sentinel.txt` には触れず、ファイルも作成していません。",
+    "initial": {
+      "files": [
+        "sentinel.txt",
+        "target.txt"
+      ],
+      "targetText": "BEFORE_APPROVAL\n",
+      "targetSha256": "cf261bbb03a833eb1ea413d28656b597588bc651fbfae2ac6d350240ad362525",
+      "sentinelText": "SENTINEL_MUST_NOT_CHANGE\n",
+      "sentinelSha256": "f603f97af62d0104eada504121031f00aea6ad4584245c19cd9aa28cae582e8f"
+    },
+    "final": {
+      "files": [
+        "sentinel.txt",
+        "target.txt"
+      ],
+      "targetText": "BEFORE_APPROVAL\n",
+      "targetSha256": "cf261bbb03a833eb1ea413d28656b597588bc651fbfae2ac6d350240ad362525",
+      "sentinelText": "SENTINEL_MUST_NOT_CHANGE\n",
+      "sentinelSha256": "f603f97af62d0104eada504121031f00aea6ad4584245c19cd9aa28cae582e8f"
+    },
+    "assertions": {
+      "turnCompleted": true,
+      "fileApprovalObserved": true,
+      "selectedDecisionObserved": true,
+      "noCommandApproval": true,
+      "approvalResolved": true,
+      "approvalEventOrderCorrect": true,
+      "fileChangeScopeCorrect": true,
+      "targetExpected": true,
+      "denyTargetHashUnchanged": true,
+      "sentinelUnchanged": true,
+      "onlyExpectedFiles": true,
+      "terminalFileStatus": true
+    },
+    "notificationCounts": {
+      "account/rateLimits/updated": 2,
+      "item/agentMessage/delta": 67,
+      "item/completed": 6,
+      "item/started": 6,
+      "mcpServer/startupStatus/updated": 6,
+      "remoteControl/status/changed": 1,
+      "serverRequest/resolved": 1,
+      "thread/started": 1,
+      "thread/status/changed": 4,
+      "thread/tokenUsage/updated": 2,
+      "turn/completed": 1,
+      "turn/started": 1
+    }
+  },
+  "accept": {
+    "name": "accept",
+    "status": "PASS",
+    "decision": "accept",
+    "elapsedMs": 15759,
+    "threadId": "<redacted>",
+    "turnId": "<redacted>",
+    "turnStatus": "completed",
+    "configured": {
+      "approvalPolicy": "on-request",
+      "approvalsReviewer": "user",
+      "sandboxType": "readOnly",
+      "ephemeral": true
+    },
+    "approvalRequests": [
+      {
+        "sequence": 44,
+        "id": 0,
+        "method": "item/fileChange/requestApproval",
+        "threadId": "<redacted>",
+        "turnId": "<redacted>",
+        "itemId": "<redacted>",
+        "reason": null,
+        "grantRoot": null,
+        "decision": "accept"
+      }
+    ],
+    "commandApprovalRequestCount": 0,
+    "resolvedRequestIds": [
+      "0"
+    ],
+    "approvalResolved": true,
+    "approvalFlow": [
+      {
+        "itemStartedSequence": 42,
+        "approvalRequestedSequence": 44,
+        "requestResolvedSequence": 45,
+        "itemCompletedSequence": 47,
+        "orderCorrect": true
+      }
+    ],
+    "fileChangeScopeCorrect": true,
+    "fileItems": [
+      {
+        "sequence": 42,
+        "event": "item/started",
+        "itemId": "<redacted>",
+        "status": "inProgress",
+        "paths": [
+          "<repository-root>\\spikes\\fixtures\\approval-sandbox\\runtime\\target.txt"
+        ]
+      },
+      {
+        "sequence": 47,
+        "event": "item/completed",
+        "itemId": "<redacted>",
+        "status": "completed",
+        "paths": [
+          "<repository-root>\\spikes\\fixtures\\approval-sandbox\\runtime\\target.txt"
+        ]
+      }
+    ],
+    "finalAgentText": "<user>、`target.txt` を `APPROVED_CHANGE` と末尾改行だけに置き換えました。",
+    "initial": {
+      "files": [
+        "sentinel.txt",
+        "target.txt"
+      ],
+      "targetText": "BEFORE_APPROVAL\n",
+      "targetSha256": "cf261bbb03a833eb1ea413d28656b597588bc651fbfae2ac6d350240ad362525",
+      "sentinelText": "SENTINEL_MUST_NOT_CHANGE\n",
+      "sentinelSha256": "f603f97af62d0104eada504121031f00aea6ad4584245c19cd9aa28cae582e8f"
+    },
+    "final": {
+      "files": [
+        "sentinel.txt",
+        "target.txt"
+      ],
+      "targetText": "APPROVED_CHANGE\n",
+      "targetSha256": "07ef442bcf34547001787b0d95d7c90ff4455ab0d29ae128c6b56f2f13159b9c",
+      "sentinelText": "SENTINEL_MUST_NOT_CHANGE\n",
+      "sentinelSha256": "f603f97af62d0104eada504121031f00aea6ad4584245c19cd9aa28cae582e8f"
+    },
+    "assertions": {
+      "turnCompleted": true,
+      "fileApprovalObserved": true,
+      "selectedDecisionObserved": true,
+      "noCommandApproval": true,
+      "approvalResolved": true,
+      "approvalEventOrderCorrect": true,
+      "fileChangeScopeCorrect": true,
+      "targetExpected": true,
+      "denyTargetHashUnchanged": true,
+      "sentinelUnchanged": true,
+      "onlyExpectedFiles": true,
+      "terminalFileStatus": true
+    },
+    "notificationCounts": {
+      "account/rateLimits/updated": 2,
+      "item/agentMessage/delta": 51,
+      "item/completed": 6,
+      "item/started": 6,
+      "mcpServer/startupStatus/updated": 6,
+      "remoteControl/status/changed": 1,
+      "serverRequest/resolved": 1,
+      "thread/started": 1,
+      "thread/status/changed": 4,
+      "thread/tokenUsage/updated": 2,
+      "turn/completed": 1,
+      "turn/diff/updated": 3,
+      "turn/started": 1
+    }
+  }
+}

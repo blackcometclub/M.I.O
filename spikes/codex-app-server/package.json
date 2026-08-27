@@ -1,0 +1,16 @@
+{
+  "name": "@moe/spike-codex-app-server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test ./evidence-utils.test.mjs",
+    "sanitize:evidence": "node ./sanitize-existing-evidence.mjs",
+    "probe:approval": "node ./probe-approval.mjs",
+    "probe:handshake": "node ./probe-handshake.mjs",
+    "probe:image": "node ./probe-image.mjs",
+    "probe:interrupt": "node ./probe-interrupt.mjs",
+    "probe:resume": "node ./probe-resume.mjs",
+    "probe:seeded-fixture": "node ./probe-seeded-fixture.mjs"
+  }
+}

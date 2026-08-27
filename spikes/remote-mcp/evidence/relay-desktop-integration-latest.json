@@ -1,0 +1,61 @@
+{
+  "observedAt": "2026-08-12T01:20:54.8508647+09:00",
+  "result": "PASS",
+  "scope": "local Remote MCP to Relay to Desktop room integration",
+  "path": [
+    "official MCP client",
+    "Remote MCP",
+    "local Relay",
+    "Desktop room source",
+    "local Relay",
+    "Remote MCP result"
+  ],
+  "roomObservation": {
+    "roomId": "moe-dev-room",
+    "afterMessageId": "welcome-3",
+    "limit": 1,
+    "messageId": "mcp-relay-desktop-message",
+    "marker": "REMOTE_MCP_RELAY_DESKTOP_OK"
+  },
+  "statusObservation": {
+    "relay": "local-outbound-link",
+    "desktop": "connected",
+    "capabilities": [
+      "ping_moe",
+      "moe_status",
+      "moe_read_room"
+    ]
+  },
+  "failureRecovery": {
+    "desktopDisconnected": true,
+    "offlineToolError": "desktop_offline",
+    "desktopReconnected": true,
+    "statusAfterReconnect": "connected",
+    "readAfterReconnect": "PASS"
+  },
+  "relayRetention": {
+    "roomCount": 0,
+    "pendingRequestCountAfterCompletion": 0
+  },
+  "securityBoundary": {
+    "relayBaseUrlRestrictedToLoopbackHttpOrigin": true,
+    "publicNetworkUsed": false,
+    "loginOrManualApproval": false,
+    "productionCredentialUsed": false
+  },
+  "cleanup": {
+    "remoteMcpStopped": true,
+    "relayStopped": true,
+    "desktopLinkClosed": true,
+    "runtimeSnapshotRemoved": true
+  },
+  "remainingBoundaries": [
+    "TLS and WSS or equivalent production transport",
+    "persistent credential storage and rotation",
+    "public Relay deployment",
+    "Claude Web call through the Relay path",
+    "artifact transfer",
+    "write idempotency",
+    "bounded pending request behavior during disconnect"
+  ]
+}

@@ -1,0 +1,149 @@
+.appearance-panel {
+  top: 45px;
+  right: 0;
+  width: min(330px, calc(100vw - 80px));
+  padding: 16px;
+}
+
+.appearance-field {
+  display: grid;
+  margin-top: 15px;
+  gap: 8px;
+  color: #6d5c46;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.appearance-field > small {
+  margin-top: -3px;
+  color: #a0917e;
+  font-size: 0.6rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.artwork-field {
+  padding-top: 13px;
+  border-top: 1px solid #eee4d7;
+}
+
+.artwork-image-picker {
+  background: #f9e7ee;
+}
+
+.artwork-action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.edit-artwork-button {
+  padding: 8px 10px;
+  border: 1px solid #e4c9d3;
+  border-radius: 10px;
+  color: #774357;
+  font-size: 0.65rem;
+  font-weight: 900;
+  background: #fff0f5;
+  cursor: pointer;
+}
+
+.artwork-editor-message,
+.transparent-png-note {
+  margin: 0;
+  font-size: 0.59rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.artwork-editor-message {
+  color: #9a4e1e;
+}
+
+.appearance-save-status {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid #eadfd1;
+  color: #6c7653;
+  font-size: 0.58rem;
+  font-weight: 800;
+}
+
+.appearance-save-status.is-saving,
+.appearance-save-status.is-loading {
+  color: #8b765b;
+}
+
+.appearance-save-status.is-error {
+  color: #a03d2f;
+}
+
+.transparent-png-note {
+  color: #9a8d7b;
+}
+
+.color-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.color-control input {
+  width: 48px;
+  height: 34px;
+  padding: 2px;
+  border: 1px solid #ded3c4;
+  border-radius: 9px;
+  background: white;
+  cursor: pointer;
+}
+
+.color-control code {
+  color: #594936;
+  font-size: 0.75rem;
+}
+
+.color-presets {
+  display: flex;
+  gap: 7px;
+}
+
+.color-presets button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #d8cbb9;
+  cursor: pointer;
+}
+
+.color-presets button.is-current {
+  box-shadow: 0 0 0 2px #c06819;
+}
+
+.image-picker,
+.clear-image-button {
+  display: flex;
+  padding: 9px 11px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px dashed #d5c7b4;
+  border-radius: 10px;
+  color: #70502e;
+  background: #faf5ed;
+  cursor: pointer;
+}
+
+.image-picker input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.clear-image-button {
+  border-style: solid;
+  font-size: 0.67rem;
+}

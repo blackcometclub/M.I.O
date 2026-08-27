@@ -1,0 +1,32 @@
+{
+  "probe": "claude-code-stream-handshake",
+  "status": "BLOCKED",
+  "startedAt": "2026-08-11T14:31:44.861Z",
+  "elapsedMs": 2944,
+  "launcherSource": "windows-native-default",
+  "cliVersion": "2.1.220 (Claude Code)",
+  "authentication": {
+    "loggedIn": true,
+    "authMethod": "claude.ai",
+    "apiProvider": "firstParty"
+  },
+  "transport": "subprocess/stream-json",
+  "requestedModel": "fable",
+  "observedModel": "claude-fable-5",
+  "toolsExposed": [],
+  "permissionModeReported": "dontAsk",
+  "streamExitCode": 1,
+  "eventCounts": {
+    "assistant": 1,
+    "result/success": 1,
+    "system/init": 1,
+    "system/status": 1
+  },
+  "markerObserved": false,
+  "resultIsError": true,
+  "resultSubtype": "success",
+  "apiErrorStatus": 403,
+  "errorCategory": "oauth_org_not_allowed",
+  "totalCostUsd": 0,
+  "manualActionRequired": "Enable Claude Code programmatic access for this account, or explicitly choose API-key authentication."
+}

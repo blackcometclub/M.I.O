@@ -1,0 +1,23 @@
+{
+  "name": "moe",
+  "version": "0.1.0-alpha.1",
+  "private": true,
+  "description": "M.I.O. (Malevolent Immortal Overdrive)",
+  "license": "AGPL-3.0-only",
+  "packageManager": "npm@11.11.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "npm run tauri:dev --workspace @moe/desktop",
+    "build": "npm run build --workspace @moe/desktop",
+    "typecheck": "npm run typecheck --workspace @moe/desktop",
+    "tauri:build": "npm run tauri:build --workspace @moe/desktop"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "adapters/*",
+    "spikes/*"
+  ]
+}

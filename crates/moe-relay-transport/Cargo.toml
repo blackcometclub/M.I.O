@@ -1,0 +1,21 @@
+[package]
+name = "moe-relay-transport"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[features]
+test-root-certificate = []
+
+[dependencies]
+moe-protocol = { path = "../moe-protocol" }
+moe-relay-client = { path = "../moe-relay-client" }
+rustls = { version = "0.23.43", default-features = false, features = ["ring", "std", "tls12"] }
+rustls-platform-verifier = "0.7.0"
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+moe-credential-store = { path = "../moe-credential-store" }
+rcgen = { version = "0.14.9", default-features = false, features = ["crypto", "ring"] }

@@ -1,0 +1,101 @@
+:root {
+  --moe-font-family: Inter, "Yu Gothic UI", "Hiragino Kaku Gothic ProN", system-ui, sans-serif;
+  --moe-chat-font-scale: 1;
+  --moe-sidebar-font-scale: 1;
+  --moe-sidebar-width: 220px;
+  color: #34240f;
+  background: transparent;
+  font-family: var(--moe-font-family);
+  font-size: 16px;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  overflow: hidden;
+  background: transparent;
+}
+
+.window-resize-handle {
+  position: fixed;
+  z-index: 1000;
+}
+
+.window-resize-handle.is-north,
+.window-resize-handle.is-south {
+  right: 14px;
+  left: 14px;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.window-resize-handle.is-east,
+.window-resize-handle.is-west {
+  top: 14px;
+  bottom: 14px;
+  width: 8px;
+  cursor: ew-resize;
+}
+
+.window-resize-handle.is-north { top: 0; }
+.window-resize-handle.is-south { bottom: 0; }
+.window-resize-handle.is-east { right: 0; }
+.window-resize-handle.is-west { left: 0; }
+
+.window-resize-handle.is-northeast,
+.window-resize-handle.is-northwest,
+.window-resize-handle.is-southeast,
+.window-resize-handle.is-southwest {
+  width: 14px;
+  height: 14px;
+}
+
+.window-resize-handle.is-northeast { top: 0; right: 0; cursor: nesw-resize; }
+.window-resize-handle.is-northwest { top: 0; left: 0; cursor: nwse-resize; }
+.window-resize-handle.is-southeast { right: 0; bottom: 0; cursor: nwse-resize; }
+.window-resize-handle.is-southwest { bottom: 0; left: 0; cursor: nesw-resize; }
+
+html,
+#root {
+  background: transparent;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+label {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  color: inherit;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

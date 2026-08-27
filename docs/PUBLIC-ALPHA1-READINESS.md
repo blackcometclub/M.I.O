@@ -1273,6 +1273,29 @@ Post-republication verification:
   - Private development repository `M.I.O-dev`はprivateのままで、local development originも
     同repoへ固定している。Public `M.I.O`へ旧120 commitをpushしていない。
 
+Post-release independent re-audit:
+
+- Date: 2026-08-27
+- Public repository: `blackcometclub/M.I.O`
+- Notes:
+  - 公開URLから匿名で新規cloneし、再監査時点でroot 1件、sanitized 3 commit、tracked file 310件、
+    exporter除外対象0件を再確認した。`git fsck --full --strict`は成功し、Gitleaks v8.30.1は
+    全履歴約1.95 MBをscanして0 findingsだった。
+  - Tag `v0.1.0-alpha.1`はrelease commit
+    `d7774aae22ddf266fc490a1e81c64315d3f29b7e`を指し、現在の`main`の祖先だった。
+    再監査時点のTag後の変更は`CHANGELOG.md`と本readiness記録だけで、製品sourceの差分はなかった。
+  - Custom source ZIPとGitHub自動生成Source code ZIPはいずれも310ファイルで、名前と内容hashの
+    差異は0件、exporter除外対象と禁止directoryは0件だった。両方の展開内容をGitleaksで再検査し、
+    0 findingsだった。Custom ZIPのSHA-256はRelease assetの
+    `28e04f774996b98779884d6cf17828e0085b090ca3a517147418790347525af6`と一致した。
+  - Public repositoryの直近3回のWindows CIとprivate development repositoryの修復commit CIは
+    すべて成功していた。Private `M.I.O-dev`は匿名アクセスでHTTP 404を返した。
+  - Private vulnerability reporting、Dependabot vulnerability alerts、Automated security fixesを
+    有効として読み戻した。再監査後、Owner承認によりSecret scanningとSecret scanning push
+    protectionも有効化し、APIの再読込で両方の`enabled`を確認した。Open Secret scanning alertは0件だった。
+  - Dependabotのopen alertはLinux限定`glib 0.18.5`のmedium 1件だけだった。Windows targetへの混入を
+    失敗させるCI境界検査は成功しており、上流修正を追跡するためdismissせずopenのまま維持する。
+
 ## Final decision
 
 - [x] **GO:** 必須項目が完了し、未完了項目はalpha.1の公開範囲外である。

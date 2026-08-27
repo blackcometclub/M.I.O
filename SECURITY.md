@@ -2,7 +2,9 @@
 
 ## Supported versions
 
-M.I.O.は現在、安定版を公開していないWindows向け研究用α版です。最初の公開候補は `v0.1.0-alpha.1` で、source-firstの評価版として準備中です。セキュリティ修正の対象は原則として最新の `main` branchだけであり、修正期限（SLA）はまだ定めていません。
+M.I.O.は現在、安定版を公開していないWindows向け研究用α版です。`v0.1.0-alpha.1`を
+2026-08-27にsource-firstのGitHub Prereleaseとして公開しました。セキュリティ修正の対象は
+原則として最新の`main` branchだけであり、修正期限（SLA）はまだ定めていません。
 
 ## 脆弱性の報告
 

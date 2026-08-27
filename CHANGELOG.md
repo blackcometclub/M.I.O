@@ -2,11 +2,11 @@
 
 M.I.O. (Malevolent Immortal Overdrive) の主な変更を記録します。
 
-## v0.1.0-alpha.1 — Public release candidate
+## v0.1.0-alpha.1 — Public alpha release
 
 Status: 2026-08-27に履歴分離済みrepositoryからGitHub Prereleaseを再公開。安定版ではありません。
 
-最初のsource-first公開候補です。複数のローカルAIをひとつのTalk Roomへ集め、直接会話または指揮者モードで協働させるWindows向け研究用α版として区切ります。
+最初のsource-first公開α版です。複数のローカルAIをひとつのTalk Roomへ集め、直接会話または指揮者モードで協働させるWindows向け研究用α版として区切ります。
 
 ### Added
 
@@ -45,4 +45,4 @@ Status: 2026-08-27に履歴分離済みrepositoryからGitHub Prereleaseを再�
 
 - source-firstの研究用α版
 - 配布用installer、コード署名、自動更新、安定版SLAは未提供
-- 公開可否は `docs/PUBLIC-ALPHA1-READINESS.md` の検証完了後に判断
+- 公開判断と検証証拠は `docs/PUBLIC-ALPHA1-READINESS.md` に記録

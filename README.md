@@ -3,7 +3,10 @@
 **M.I.O. (Malevolent Immortal Overdrive)** は、複数のAIをひとつのTalk Roomへ集め、直接会話または指揮者モードで協働させるWindows向けローカル優先デスクトップアプリです。
 
 > [!IMPORTANT]
-> 現在の公開候補は **M.I.O. v0.1.0-alpha.1** です。評価と研究を目的としたsource-firstのα版であり、安定版ではありません。配布用インストーラー、コード署名、自動更新、安定版SLAはまだありません。
+> **M.I.O. v0.1.0-alpha.1** は、2026-08-27に
+> [GitHub Prerelease](https://github.com/blackcometclub/M.I.O/releases/tag/v0.1.0-alpha.1)
+> として公開したsource-firstのα版です。評価と研究を目的としており、安定版ではありません。
+> 配布用インストーラー、コード署名、自動更新、安定版SLAはまだありません。
 
 ## Screenshots
 
@@ -69,7 +72,8 @@ CLIが見つからない、認証されていない、またはProviderが利用
 - local MCPはtoken未設定時に起動せず、loopback以外へbindしない
 - WebViewへ任意shell権限やcredential値を公開しない
 
-詳細な公開範囲は [ADR 0037](docs/decisions/0037-mio-public-alpha-release-boundary.md)、未完了を含む検証項目は [公開準備チェックリスト](docs/PUBLIC-ALPHA1-READINESS.md) を参照してください。チェックリストが完了するまでは、公開準備完了を意味しません。
+詳細な公開範囲は [ADR 0037](docs/decisions/0037-mio-public-alpha-release-boundary.md)、
+公開判断と検証証拠は [公開準備チェックリスト](docs/PUBLIC-ALPHA1-READINESS.md) を参照してください。
 
 ## 現在の主な制約
 
@@ -200,7 +204,7 @@ npm.cmd run tauri:build
 
 `tauri:build` は開発確認用の `--no-bundle` buildです。インストーラーは生成しません。
 
-Windows x64向けの公開候補EXEは、次の専用scriptでbuildします。このscriptはfrontendを
+Windows x64向けのalpha.1検証用EXEは、次の専用scriptでbuildします。このscriptはfrontendを
 buildした後、Visual C++ Runtimeを静的linkしたrelease executableを生成し、SHA-256を
 表示します。installerやWebView2 Runtimeは同梱しません。
 

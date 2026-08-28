@@ -1,14 +1,17 @@
 [CmdletBinding()]
-param()
+param(
+    [switch]$Installer
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $repositoryRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
 $targetTriple = "x86_64-pc-windows-msvc"
-$artifactPath = Join-Path $repositoryRoot "target\$targetTriple\release\moe-desktop.exe"
+$executablePath = Join-Path $repositoryRoot "target\$targetTriple\release\moe-desktop.exe"
 $desktopRoot = Join-Path $repositoryRoot "apps\desktop"
 $tauriExecutable = Join-Path $repositoryRoot "node_modules\.bin\tauri.cmd"
+$tauriInstallerConfig = Join-Path $desktopRoot "src-tauri\tauri.installer.conf.json"
 $rustFlagsVariable = "CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS"
 $staticCrtFlags = "-C target-feature=+crt-static"
 $pathVariable = "PATH"
@@ -55,6 +58,31 @@ function Restore-ProcessEnvironmentVariable {
 if (-not (Test-Path -LiteralPath $tauriExecutable -PathType Leaf)) {
     throw "The local Tauri CLI was not found. Run npm ci before building the Windows alpha executable."
 }
+if ($Installer -and -not (Test-Path -LiteralPath $tauriInstallerConfig -PathType Leaf)) {
+    throw "The Windows installer configuration was not found: $tauriInstallerConfig"
+}
+
+$tauriArguments = @("build")
+if ($Installer) {
+    $tauriArguments += @(
+        "--bundles"
+        "nsis"
+        "--config"
+        $tauriInstallerConfig
+        "--no-sign"
+    )
+}
+else {
+    $tauriArguments += "--no-bundle"
+}
+$tauriArguments += @(
+    "--target"
+    $targetTriple
+    "--runner"
+    $cargoExecutable
+    "--"
+    "--locked"
+)
 
 try {
     [Environment]::SetEnvironmentVariable($pathVariable, $buildPath, "Process")
@@ -62,15 +90,27 @@ try {
     Push-Location -LiteralPath $desktopRoot
     $locationPushed = $true
 
-    & $tauriExecutable `
-        build `
-        --no-bundle `
-        --target $targetTriple `
-        --runner $cargoExecutable `
-        -- `
-        --locked
+    & $tauriExecutable @tauriArguments
     if ($LASTEXITCODE -ne 0) {
-        throw "The Windows alpha executable build failed with exit code $LASTEXITCODE."
+        $artifactKind = if ($Installer) { "installer" } else { "executable" }
+        throw "The Windows alpha $artifactKind build failed with exit code $LASTEXITCODE."
+    }
+
+    if (-not (Test-Path -LiteralPath $executablePath -PathType Leaf)) {
+        throw "The expected executable was not created: $executablePath"
+    }
+
+    if ($Installer) {
+        $releaseVersion = [string](
+            Get-Content -LiteralPath (Join-Path $desktopRoot "src-tauri\tauri.conf.json") -Raw |
+                ConvertFrom-Json
+        ).version
+        $artifactPath = Join-Path `
+            $repositoryRoot `
+            "target\$targetTriple\release\bundle\nsis\M.I.O._$($releaseVersion)_x64-setup.exe"
+    }
+    else {
+        $artifactPath = $executablePath
     }
 
     if (-not (Test-Path -LiteralPath $artifactPath -PathType Leaf)) {
@@ -78,7 +118,12 @@ try {
     }
 
     $artifactHash = Get-FileHash -Algorithm SHA256 -LiteralPath $artifactPath
-    Write-Host "M.I.O. Windows alpha executable: $artifactPath"
+    $artifactLabel = if ($Installer) { "installer" } else { "executable" }
+    Write-Host "M.I.O. Windows alpha $artifactLabel`: $artifactPath"
+    if ($Installer) {
+        $signature = Get-AuthenticodeSignature -LiteralPath $artifactPath
+        Write-Host "Signature status: $($signature.Status)"
+    }
     Write-Host "SHA-256: $($artifactHash.Hash)"
 }
 finally {

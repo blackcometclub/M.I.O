@@ -8,7 +8,7 @@
 > **M.I.O. v0.1.0-alpha.2** was published on August 28, 2026 as a
 > [GitHub Prerelease](https://github.com/blackcometclub/M.I.O/releases/tag/v0.1.0-alpha.2).
 > It is a source-first alpha intended for evaluation and research, not a stable release.
-> A packaged installer, code signing, automatic updates, and a stable-release SLA are not yet provided.
+> A downloadable packaged installer, code signing, automatic updates, and a stable-release SLA are not yet provided.
 
 Alpha.2 supersedes alpha.1 for new evaluations. The published
 [alpha.1 Release](https://github.com/blackcometclub/M.I.O/releases/tag/v0.1.0-alpha.1), tag, and asset
@@ -96,7 +96,7 @@ and the [public readiness checklist](docs/PUBLIC-ALPHA1-READINESS.md) for the re
 - Token-streaming UI, cancellation during a Provider turn, and model selection UI are not supported
 - Public Remote Relay, multiple devices, and multiple accounts remain research work
 - Background automation, unlimited conductor rounds, and nested delegation are not supported
-- A packaged installer, code signing, and automatic updates are not provided
+- A downloadable packaged installer, code signing, and automatic updates are not provided
 
 ## System requirements
 
@@ -105,9 +105,10 @@ M.I.O. v0.1.0-alpha.2 targets 64-bit Windows 10 or Windows 11. It requires the E
 This is the shared Runtime used by Windows desktop apps to display their UI, not the Microsoft Edge
 browser itself.
 
-The current alpha is source-first and does not yet include an installer that automatically installs
-WebView2. If the Runtime is missing, install the Evergreen Runtime from Microsoft's official download
-page.
+The current public alpha Release is source-first and does not attach a downloadable installer. A source
+checkout can build an unsigned validation installer that uses Tauri's WebView2 download bootstrapper.
+If you run only the standalone executable and the Runtime is missing, install the Evergreen Runtime from
+Microsoft's official download page.
 
 The Codex, Gemini, Claude, and Grok CLIs are not required to start M.I.O. Install and authenticate only
 the CLIs for the AIs you intend to use. Gate 3 startup validation in an isolated Windows environment with
@@ -231,6 +232,18 @@ SHA-256 hash. It does not bundle an installer or the WebView2 Runtime.
 ```
 
 The executable is written to `target/x86_64-pc-windows-msvc/release/moe-desktop.exe`.
+
+Build an unsigned Windows x64 NSIS validation installer with:
+
+```powershell
+& .\scripts\build-alpha-windows.ps1 -Installer
+```
+
+The installer uses a current-user installation under `%LOCALAPPDATA%\M.I.O.` and does not require
+Administrator privileges. If WebView2 is missing, it uses Tauri's download bootstrapper and therefore
+requires an internet connection during installation. The output is written to
+`target/x86_64-pc-windows-msvc/release/bundle/nsis/`. This is a local validation artifact; it is unsigned
+and is not automatically attached to a GitHub Release.
 
 Create a public source ZIP and validation manifest from a committed state with:
 

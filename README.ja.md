@@ -8,7 +8,7 @@
 > **M.I.O. v0.1.0-alpha.2** は、2026-08-28に
 > [GitHub Prerelease](https://github.com/blackcometclub/M.I.O/releases/tag/v0.1.0-alpha.2)
 > として公開したsource-firstのα版です。評価と研究を目的としており、安定版ではありません。
-> 配布用インストーラー、コード署名、自動更新、安定版SLAはまだありません。
+> ダウンロード配布用インストーラー、コード署名、自動更新、安定版SLAはまだありません。
 
 新しく評価する場合はalpha.2を使用してください。公開済みの
 [alpha.1 Release](https://github.com/blackcometclub/M.I.O/releases/tag/v0.1.0-alpha.1)、tag、assetは
@@ -89,7 +89,7 @@ CLIが見つからない、認証されていない、またはProviderが利用
 - token streaming UI、Provider turn途中のcancel、model選択UIは未対応
 - 公開Remote Relay、複数device、複数accountは研究中
 - background automation、無制限のconductor round、nested delegationは未対応
-- installer、コード署名、自動更新は未提供
+- ダウンロード配布用installer、コード署名、自動更新は未提供
 
 ## 動作環境
 
@@ -98,9 +98,10 @@ M.I.O. v0.1.0-alpha.2の対象は、64-bit版のWindows 10またはWindows 11で
 のEvergreen版が必要です。Microsoft Edge browserそのものではなく、Windows desktop
 appが画面を表示するための共有Runtimeです。
 
-現在はsource-firstのα版で、WebView2を自動導入するinstallerはまだありません。
-Runtimeがない場合は、Microsoft公式download pageからEvergreen Runtimeを導入して
-ください。
+現在の公開alpha Releaseはsource-firstで、ダウンロード配布用installerを添付していません。
+source checkoutからは、TauriのWebView2 download bootstrapperを使う未署名の検証用installerを
+buildできます。standalone EXEだけを実行する場合にRuntimeがなければ、Microsoft公式download
+pageからEvergreen Runtimeを導入してください。
 
 Codex、Gemini、Claude、GrokのCLIはM.I.O.本体の起動要件ではありません。利用したい
 AIのCLIだけを別途導入・認証します。CLIが一つもない隔離Windows環境での公開前Gate 3
@@ -219,6 +220,17 @@ buildした後、Visual C++ Runtimeを静的linkしたrelease executableを生�
 ```
 
 生成先は `target/x86_64-pc-windows-msvc/release/moe-desktop.exe` です。
+
+Windows x64向けの未署名NSIS検証用installerは、次のcommandでbuildします。
+
+```powershell
+& .\scripts\build-alpha-windows.ps1 -Installer
+```
+
+このinstallerは現ユーザー用として `%LOCALAPPDATA%\M.I.O.` へ導入し、管理者権限を必要としません。
+WebView2がない場合はTauriのdownload bootstrapperを使用するため、install中にinternet接続が必要です。
+生成先は `target/x86_64-pc-windows-msvc/release/bundle/nsis/` です。これはローカル検証用artifactで、
+未署名のままGitHub Releaseへ自動添付されることはありません。
 
 Commit済みの状態から公開用source ZIPと検査manifestを作る場合は、次を使います。root package、
 desktop package、Tauri、Rust workspaceのversionが一致しない場合は生成を拒否します。

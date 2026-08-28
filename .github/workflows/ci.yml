@@ -32,6 +32,10 @@ jobs:
       - name: Build desktop frontend
         run: npm run build
 
+      - name: Build unsigned Windows installer
+        shell: pwsh
+        run: ./scripts/build-alpha-windows.ps1 -Installer
+
       - name: Test evidence sanitization
         run: npm run test --workspace @moe/spike-codex-app-server
 

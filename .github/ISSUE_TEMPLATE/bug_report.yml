@@ -1,0 +1,102 @@
+name: "Bug report / 不具合報告"
+description: "Report a reproducible problem with M.I.O. / M.I.O.で再現する問題を報告します"
+title: "[Bug / 不具合] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve M.I.O. / M.I.O.の改善にご協力いただきありがとうございます。
+
+        **Do not include API keys, tokens, cookies, OAuth codes, passwords, personal conversations, or private file contents.** Redact local user names and paths from logs and screenshots.
+
+        **API key、token、cookie、OAuth code、password、個人の会話、非公開ファイルの内容を投稿しないでください。** ログやスクリーンショットに含まれるユーザー名とローカルpathは伏せてください。
+
+        If this may be a security vulnerability or credential exposure, stop and use the private security-report link in the template chooser instead of submitting this public Issue.
+
+        脆弱性やcredential漏えいの可能性がある場合は、この公開Issueを送信せず、テンプレート選択画面の非公開セキュリティ報告を使用してください。
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: "Preflight checks / 事前確認"
+      options:
+        - label: "I searched existing Issues for the same problem. / 同じ問題が既存Issueにないことを確認しました。"
+          required: true
+        - label: "This report does not contain secrets, personal conversations, or private file contents. / 秘密情報、個人の会話、非公開ファイルの内容を含めていません。"
+          required: true
+        - label: "This is not a security vulnerability or possible credential exposure. / 脆弱性やcredential漏えいの可能性がある問題ではありません。"
+          required: true
+
+  - type: input
+    id: mio-version
+    attributes:
+      label: "M.I.O. version or commit / M.I.O.のversionまたはcommit"
+      description: "Example / 例: v0.1.0-alpha.2 or c301c03"
+      placeholder: "v0.1.0-alpha.2"
+    validations:
+      required: true
+
+  - type: input
+    id: windows-version
+    attributes:
+      label: "Windows version / Windowsのversion"
+      description: "Include edition, version, and OS build when available. / 分かる場合はedition、version、OS buildを含めてください。"
+      placeholder: "Windows 11 24H2, OS build ..."
+    validations:
+      required: true
+
+  - type: input
+    id: cli-version
+    attributes:
+      label: "Relevant AI CLI and version / 関係するAI CLIとversion"
+      description: "Enter Not applicable / 該当なし when the problem does not involve an AI CLI."
+      placeholder: "Codex CLI 0.149.0, or Not applicable / 該当なし"
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-behavior
+    attributes:
+      label: "What happened? / 実際に起きたこと"
+      description: "Describe the visible result and any bounded error message. / 画面上の結果と表示されたerrorを説明してください。"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: "Expected behavior / 期待した動作"
+      description: "Describe what you expected M.I.O. to do. / M.I.O.に期待した動作を説明してください。"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: "Steps to reproduce / 再現手順"
+      description: "Use the smallest safe sequence that reproduces the problem. Do not include credentials. / 問題を再現する最小限の安全な手順を、credentialを含めずに記載してください。"
+      placeholder: |
+        1. Start M.I.O. / M.I.O.を起動する
+        2. ...
+        3. Observe ... / ...を確認する
+    validations:
+      required: true
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: "Frequency / 発生頻度"
+      options:
+        - "Every time / 毎回"
+        - "Often / よく発生する"
+        - "Sometimes / ときどき"
+        - "Once / 1回だけ"
+        - "Unknown / 不明"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: "Additional context or redacted logs / 補足情報または伏せ字済みログ"
+      description: "Optional. Remove secrets, personal conversations, user names, and private paths before attaching text or images. / 任意。秘密情報、個人の会話、ユーザー名、非公開pathを削除してから文章や画像を添付してください。"

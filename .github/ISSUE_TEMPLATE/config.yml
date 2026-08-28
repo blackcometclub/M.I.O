@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "Private security report / 非公開セキュリティ報告"
+    url: "https://github.com/blackcometclub/M.I.O/security/advisories/new"
+    about: "Report vulnerabilities or possible credential exposure privately. / 脆弱性やcredential漏えいの可能性は非公開で報告してください。"

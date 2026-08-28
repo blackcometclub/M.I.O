@@ -1,0 +1,78 @@
+name: "Feature proposal / 機能提案"
+description: "Propose a focused improvement to M.I.O. / M.I.O.への具体的な改善を提案します"
+title: "[Proposal / 提案] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for proposing an improvement. / 改善案をありがとうございます。
+
+        Please describe the user need before the implementation idea. Do not include secrets, personal conversations, or private file contents.
+
+        実装案より先に、利用者が困っていることや必要としていることを説明してください。秘密情報、個人の会話、非公開ファイルの内容は投稿しないでください。
+
+        M.I.O. does not currently accept unsolicited Pull Requests containing code, images, translations, or other copyrighted works. See CONTRIBUTING.md before preparing an implementation.
+
+        M.I.O.は現在、事前合意のないコード、画像、翻訳、その他の著作物を含むPull Requestを受け付けていません。実装を準備する前にCONTRIBUTING.ja.mdを確認してください。
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: "Preflight checks / 事前確認"
+      options:
+        - label: "I searched existing Issues for a similar proposal. / 同様の提案が既存Issueにないことを確認しました。"
+          required: true
+        - label: "This proposal does not contain secrets, personal conversations, or private file contents. / 秘密情報、個人の会話、非公開ファイルの内容を含めていません。"
+          required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: "Area / 対象領域"
+      options:
+        - "Talk Room and UI / Talk RoomとUI"
+        - "Provider or AI CLI connection / ProviderまたはAI CLI接続"
+        - "Conductor and collaboration / Conductorと協働"
+        - "Safety, privacy, or permissions / 安全性、privacy、権限"
+        - "Backup, restore, or data portability / backup、restore、data portability"
+        - "Documentation or onboarding / 文書または導入案内"
+        - "Build, packaging, or installer / build、配布、installer"
+        - "Other / その他"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "User need or problem / 利用者の必要性または問題"
+      description: "Who is affected, and what is difficult today? / 誰が、現在どのような点で困るのかを説明してください。"
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "Proposed improvement / 提案する改善"
+      description: "Describe the smallest useful change. / 役に立つ最小限の変更を説明してください。"
+    validations:
+      required: true
+
+  - type: textarea
+    id: benefit
+    attributes:
+      label: "Expected benefit / 期待する効果"
+      description: "Explain how the proposal improves M.I.O. without overstating unsupported behavior. / 未対応の動作を完成扱いせず、この提案がM.I.O.をどう改善するか説明してください。"
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "Alternatives considered / 検討した代替案"
+      description: "Optional. Include any current workaround. / 任意。現在の回避策があれば含めてください。"
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: "Additional context / 補足情報"
+      description: "Optional. Do not attach private data or material you are not authorized to publish. / 任意。非公開情報や公開権限のない素材を添付しないでください。"

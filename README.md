@@ -284,7 +284,9 @@ their rationale, and their consequences are recorded in the [ADRs](docs/decision
 
 ## Public project information
 
-- Bug reports and proposals: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Bug reports: [open the bug report form](https://github.com/blackcometclub/M.I.O/issues/new?template=bug_report.yml)
+- Feature proposals: [open the proposal form](https://github.com/blackcometclub/M.I.O/issues/new?template=feature_request.yml)
+- Contribution policy: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Security reports: [SECURITY.md](SECURITY.md)
 - Documentation guide: [docs/README.md](docs/README.md)
 

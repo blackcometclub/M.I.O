@@ -265,8 +265,8 @@ ADR 0037より前の履歴文書には、判断時点の旧製品名 `M.O.E.` �
 
 ## 公開プロジェクトとしての案内
 
-- 不具合報告と提案: [CONTRIBUTING.md](CONTRIBUTING.md)
-- 脆弱性の報告: [SECURITY.md](SECURITY.md)
+- 不具合報告と提案: [CONTRIBUTING.ja.md](CONTRIBUTING.ja.md)
+- 脆弱性の報告: [SECURITY.ja.md](SECURITY.ja.md)
 - 文書の読み方: [docs/README.md](docs/README.md)
 
 ## License

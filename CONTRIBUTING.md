@@ -1,30 +1,32 @@
 # Contributing to M.I.O.
 
-M.I.O. (Malevolent Immortal Overdrive) に関心を持っていただき、ありがとうございます。
+**English** | [日本語](CONTRIBUTING.ja.md)
 
-## 現在受け付けているもの
+Thank you for your interest in M.I.O. (Malevolent Immortal Overdrive).
 
-- Issueによる不具合報告
-- 再現手順や環境情報の追加
-- 機能・設計・使い勝手についての提案
-- 公開文書の誤記や分かりにくい箇所の報告
+## What we currently accept
 
-秘密情報、API key、session token、個人の会話履歴、公開を許可されていない画像や文書は投稿しないでください。
+- Bug reports through GitHub Issues
+- Additional reproduction steps or environment information
+- Proposals about features, design, or usability
+- Reports of mistakes or unclear wording in public documentation
 
-## コードPull Requestについて
+Do not post secrets, API keys, session tokens, personal conversation history, or images and documents that you are not authorized to publish.
 
-M.I.O.は `AGPL-3.0-only` と別途商用ライセンスのデュアルライセンス方針を採用しています。外部Contributionを商用版にも正しく含めるには、Contributorから商用再ライセンスに必要な許諾を得る仕組みが必要です。
+## Code pull requests
 
-Contributor Agreementと確認手続きをまだ整備していないため、現時点では外部からのコード、画像、翻訳、その他の著作物を含むPull Requestを受け付けていません。事前合意のないPull Requestはmergeできません。
+M.I.O. follows a dual-licensing model: the public code is offered under `AGPL-3.0-only`, and the copyright holder may offer a separate commercial license. To include an external contribution correctly in a commercial edition, the project needs a process for obtaining the permissions required for commercial relicensing from the Contributor.
 
-Contribution受付を開始するときは、この文書へ次を追加します。
+Because a Contributor Agreement and its review process are not yet available, the project does not currently accept unsolicited Pull Requests containing code, images, translations, or other copyrighted works. Pull Requests submitted without prior agreement cannot be merged.
 
-- Contributor Agreement
-- copyrightと再ライセンスの扱い
-- 開発環境と検証command
-- coding styleとreview手順
-- security issueの非公開報告先
+Before accepting Contributions, this document will be updated with:
+
+- A Contributor Agreement
+- Copyright and relicensing terms
+- Development environment and validation commands
+- Coding style and review procedures
+- A private reporting path for security issues
 
 ## License
 
-現在のrepository内容には、特記がない限り `LICENSE` のGNU Affero General Public License v3.0 onlyが適用されます。商用ライセンスについては `COMMERCIAL-LICENSE.md` を参照してください。
+Except where otherwise noted, the current repository contents are available under the [GNU Affero General Public License v3.0 only](LICENSE). See [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) for information about commercial licensing.

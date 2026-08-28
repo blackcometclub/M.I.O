@@ -1,25 +1,25 @@
 # Security Policy
 
+**English** | [日本語](SECURITY.ja.md)
+
 ## Supported versions
 
-M.I.O.は現在、安定版を公開していないWindows向け研究用α版です。`v0.1.0-alpha.1`を
-2026-08-27にsource-firstのGitHub Prereleaseとして公開しました。セキュリティ修正の対象は
-原則として最新の`main` branchだけであり、修正期限（SLA）はまだ定めていません。
+M.I.O. is currently a research alpha for Windows and does not have a stable release. `v0.1.0-alpha.2` was published as a source-first GitHub Prerelease on August 28, 2026. Security fixes generally target the latest `main` branch, and no remediation deadline or service-level agreement (SLA) is currently provided.
 
-## 脆弱性の報告
+## Reporting a vulnerability
 
-脆弱性やcredential漏えいにつながる問題は、公開Issueへ詳細を書かないでください。GitHubリポジトリの **Security** タブから非公開で報告してください。Private vulnerability reportingが利用できない場合は、再現手順や秘密情報を公開せず、リポジトリ所有者へ非公開の連絡手段を確認してください。
+Do not describe vulnerabilities or possible credential exposure in a public Issue. Use the repository's **Security** tab to report a vulnerability privately. If private vulnerability reporting is unavailable, do not publish reproduction details or secrets; ask the repository owner for a private contact method.
 
-特に次の領域の報告を歓迎します。
+Reports are especially welcome for:
 
-- credentialやtokenがWebView、ログ、証跡へ漏れる問題
-- Tauri command / IPCの権限境界を越える問題
-- Relay / MCPの認証、pairing、request correlationの欠陥
-- 許可範囲外のファイル読み書きやpath traversal
-- 意図しない外部送信、tool実行、承認の迂回
+- Credentials or tokens exposed to the WebView, logs, or evidence artifacts
+- Tauri command or IPC authorization-boundary bypasses
+- Relay or MCP authentication, pairing, or request-correlation defects
+- Out-of-scope file access or path traversal
+- Unintended external transmission, tool execution, or approval bypasses
 
-報告には、影響、再現に必要な最小手順、確認したcommitを含めてください。実在するAPI key、token、cookie、個人情報は添付しないでください。秘密情報が露出した可能性がある場合は、報告を待たずに該当credentialを失効・再発行してください。
+Include the impact, the minimum steps needed to reproduce the issue, and the commit you tested. Do not attach real API keys, tokens, cookies, or personal information. If a secret may have been exposed, revoke and replace it immediately rather than waiting for the report to be reviewed.
 
-## 現在の制約
+## Current constraints
 
-`spikes/` は接続方式を検証するためのPoCです。製品品質や公開サーバー運用を保証するものではありません。外部公開や実アカウントを伴うprobeは、各READMEの前提とデータ送信範囲を確認したうえで、隔離したテストデータだけを使用してください。
+Content under `spikes/` consists of proofs of concept for evaluating connection methods. It does not guarantee product quality or operation of a public server. Before running a probe that involves external publication or a real account, review its README for prerequisites and data-transmission scope, and use isolated test data only.

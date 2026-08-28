@@ -2,9 +2,9 @@
 
 M.I.O. (Malevolent Immortal Overdrive) の主な変更を記録します。
 
-## v0.1.0-alpha.2 — Unreleased
+## v0.1.0-alpha.2 — 2026-08-28
 
-Status: 開発中。Release、tag、assetはまだ作成していません。
+Status: 履歴分離済みrepositoryからGitHub Prereleaseとして公開。安定版ではありません。
 
 ### Fixed
 
@@ -13,7 +13,8 @@ Status: 開発中。Release、tag、assetはまだ作成していません。
 ### Changed
 
 - Windows alpha buildとpublic source exportのscriptを版番号非依存にし、committed manifestのversionを使用する
-- 公開済みのalpha.1 Release、tag、assetを変更せず、alpha.2を別Releaseとして準備する
+- READMEを英語の標準版と日本語版に分け、相互に切り替えられるようにした
+- 公開済みのalpha.1 Release、tag、assetを変更せず、alpha.2を別Releaseとして公開する
 
 ## v0.1.0-alpha.1 — Public alpha release
 

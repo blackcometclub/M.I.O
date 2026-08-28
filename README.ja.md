@@ -5,13 +5,14 @@
 **M.I.O. (Malevolent Immortal Overdrive)** は、複数のAIをひとつのTalk Roomへ集め、直接会話または指揮者モードで協働させるWindows向けローカル優先デスクトップアプリです。
 
 > [!IMPORTANT]
-> **M.I.O. v0.1.0-alpha.1** は、2026-08-27に
-> [GitHub Prerelease](https://github.com/blackcometclub/M.I.O/releases/tag/v0.1.0-alpha.1)
+> **M.I.O. v0.1.0-alpha.2** は、2026-08-28に
+> [GitHub Prerelease](https://github.com/blackcometclub/M.I.O/releases/tag/v0.1.0-alpha.2)
 > として公開したsource-firstのα版です。評価と研究を目的としており、安定版ではありません。
 > 配布用インストーラー、コード署名、自動更新、安定版SLAはまだありません。
 
-`main` branchは現在`v0.1.0-alpha.2`の開発中です。公開済みのalpha.1 Release、tag、assetは
-履歴として固定し、alpha.2が公開されるまでは上記alpha.1が最新の配布版です。
+新しく評価する場合はalpha.2を使用してください。公開済みの
+[alpha.1 Release](https://github.com/blackcometclub/M.I.O/releases/tag/v0.1.0-alpha.1)、tag、assetは
+変更せず、履歴として固定しています。
 
 ## Screenshots
 
@@ -45,16 +46,16 @@
 - Roomの作成、名前変更、参加AI管理、message履歴の永続化
 - 参加者の表示名、avatar、AI向けローカル案内、対応済みaccess modeの端末内保存
 - 全RoomのJSON backupと、確認付きの最新backup復元
-- Codexの会話専用接続（workspace read / writeは境界検証未完了のためalpha.1では無効）
+- Codexの会話専用接続（workspace read / writeは境界検証未完了のためalpha.2では無効）
 - token設定時だけloopbackへ起動する、範囲を限定したlocal MCP tools
 
 Conductor modeは自動で無制限に仕事を連鎖させる機能ではありません。最初の対応conductorはCodexだけで、Ownerの1件の依頼に対して1 round・最大3 workerまでに制限しています。Direct modeとConductor modeはRoom画面で選び直せます。
 
 ## 対応状況
 
-| 接続先 | alpha.1での状態 | 範囲 |
+| 接続先 | alpha.2での状態 | 範囲 |
 |---|---|---|
-| Codex | 対応 | ローカルCodex CLI経由の会話とConductor。workspace read / writeはalpha.1では無効 |
+| Codex | 対応 | ローカルCodex CLI経由の会話とConductor。workspace read / writeはalpha.2では無効 |
 | Gemini Antigravity | 対応 | ローカルCLI経由の会話専用応答 |
 | Claude Fable | 対応 | ローカルClaude CLI経由の会話専用応答 |
 | Grok | 対応 | ローカルCLI経由の会話専用応答 |
@@ -72,7 +73,7 @@ CLIが見つからない、認証されていない、またはProviderが利用
 - 1つのsource message / recipientにつき外部turnを一度だけ開始し、結果不明時に自動再送しない
 - Roomとdispatchの状態を永続化し、partial resultとunknown outcomeを成功扱いしない
 - desktopはsingle-instanceで動作し、同じRoom dataへのwriter重複を避ける
-- Codexのworkspace read / writeはalpha.1では選択できず、保存済み設定が届いてもProvider起動前に拒否する
+- Codexのworkspace read / writeはalpha.2では選択できず、保存済み設定が届いてもProvider起動前に拒否する
 - Fable、Gemini、Grokにはworkspace read / writeを付与しない
 - local MCPはtoken未設定時に起動せず、loopback以外へbindしない
 - WebViewへ任意shell権限やcredential値を公開しない
@@ -83,7 +84,7 @@ CLIが見つからない、認証されていない、またはProviderが利用
 ## 現在の主な制約
 
 - Windows以外の動作を保証しない
-- Codex workspaceは`elevated`を含むWindows native sandboxでnested junction経由のroot外readを防げなかったため、alpha.1では会話のみ利用可能
+- Codex workspaceは`elevated`を含むWindows native sandboxでnested junction経由のroot外readを防げなかったため、alpha.2では会話のみ利用可能
 - Fable、Gemini、Grokは会話専用で、workspace accessには未対応
 - token streaming UI、Provider turn途中のcancel、model選択UIは未対応
 - 公開Remote Relay、複数device、複数accountは研究中
@@ -92,7 +93,7 @@ CLIが見つからない、認証されていない、またはProviderが利用
 
 ## 動作環境
 
-M.I.O. v0.1.0-alpha.1の対象は、64-bit版のWindows 10またはWindows 11です。実行には
+M.I.O. v0.1.0-alpha.2の対象は、64-bit版のWindows 10またはWindows 11です。実行には
 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)
 のEvergreen版が必要です。Microsoft Edge browserそのものではなく、Windows desktop
 appが画面を表示するための共有Runtimeです。
@@ -129,7 +130,7 @@ codex
 初回起動では`Sign in with ChatGPT`または公式手順にあるAPI key方式を選びます。M.I.O.は
 `codex`をPATHまたは標準install先から検出し、`codex app-server`を起動します。
 
-Windows alpha.1ではnested junction経由のread境界が未解決のため、Room workspaceのread / writeを
+Windows alpha.2ではnested junction経由のread境界が未解決のため、Room workspaceのread / writeを
 無効にしています。Codex側のsandbox設定にかかわらず、workspaceを伴うturnはProvider起動前に拒否します。
 M.I.O.はCodexの`config.toml`を変更しません。会話のみのCodex送信は引き続き利用できます。
 

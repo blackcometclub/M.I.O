@@ -5,14 +5,14 @@
 **M.I.O. (Malevolent Immortal Overdrive)** is a local-first Windows desktop app that brings multiple AIs into one Talk Room, where they can collaborate through direct conversations or Conductor mode.
 
 > [!IMPORTANT]
-> **M.I.O. v0.1.0-alpha.1** was published on August 27, 2026 as a
-> [GitHub Prerelease](https://github.com/blackcometclub/M.I.O/releases/tag/v0.1.0-alpha.1).
+> **M.I.O. v0.1.0-alpha.2** was published on August 28, 2026 as a
+> [GitHub Prerelease](https://github.com/blackcometclub/M.I.O/releases/tag/v0.1.0-alpha.2).
 > It is a source-first alpha intended for evaluation and research, not a stable release.
 > A packaged installer, code signing, automatic updates, and a stable-release SLA are not yet provided.
 
-The `main` branch is currently under development for `v0.1.0-alpha.2`. The published alpha.1 Release,
-tag, and asset remain immutable historical artifacts. Until alpha.2 is published, alpha.1 remains the
-latest available release.
+Alpha.2 supersedes alpha.1 for new evaluations. The published
+[alpha.1 Release](https://github.com/blackcometclub/M.I.O/releases/tag/v0.1.0-alpha.1), tag, and asset
+remain immutable historical artifacts.
 
 ## Screenshots
 
@@ -46,7 +46,7 @@ are illustrative text for explaining the product and are not actual Provider res
 - Create and rename Rooms, manage participating AIs, and persist message history
 - Store participant display names, avatars, local AI guidance, and supported access modes on the device
 - Export all Rooms as a JSON backup and restore the latest backup after confirmation
-- Connect to Codex for chat only (workspace read/write is disabled in alpha.1 because boundary validation is incomplete)
+- Connect to Codex for chat only (workspace read/write is disabled in alpha.2 because boundary validation is incomplete)
 - Start bounded local MCP tools on loopback only when a token is configured
 
 Conductor mode does not create an automatic or unlimited chain of work. Codex is the first and only
@@ -55,9 +55,9 @@ and Conductor mode can be selected again from the Room screen.
 
 ## Connection status
 
-| Provider | Status in alpha.1 | Scope |
+| Provider | Status in alpha.2 | Scope |
 |---|---|---|
-| Codex | Supported | Conversation and Conductor through the local Codex CLI. Workspace read/write is disabled in alpha.1 |
+| Codex | Supported | Conversation and Conductor through the local Codex CLI. Workspace read/write is disabled in alpha.2 |
 | Gemini Antigravity | Supported | Conversation-only responses through the local CLI |
 | Claude Fable | Supported | Conversation-only responses through the local Claude CLI |
 | Grok | Supported | Conversation-only responses through the local CLI |
@@ -80,7 +80,7 @@ that is not connected.
 - Start an external turn only once for each source message and recipient; do not retry automatically when the outcome is unknown
 - Persist Room and dispatch state; do not report partial results or unknown outcomes as success
 - Run the desktop app as a single instance to avoid multiple writers for the same Room data
-- Do not offer Codex workspace read/write in alpha.1; reject persisted workspace requests before starting the Provider
+- Do not offer Codex workspace read/write in alpha.2; reject persisted workspace requests before starting the Provider
 - Do not grant workspace read/write to Fable, Gemini, or Grok
 - Do not start local MCP without a token, and never bind it outside loopback
 - Do not expose arbitrary shell access or credential values to the WebView
@@ -91,7 +91,7 @@ and the [public readiness checklist](docs/PUBLIC-ALPHA1-READINESS.md) for the re
 ## Current limitations
 
 - Operating systems other than Windows are not supported
-- Codex workspace access is chat-only in alpha.1 because the Windows native sandbox, including `elevated` mode, did not prevent root-external reads through a nested junction
+- Codex workspace access is chat-only in alpha.2 because the Windows native sandbox, including `elevated` mode, did not prevent root-external reads through a nested junction
 - Fable, Gemini, and Grok are conversation-only and do not support workspace access
 - Token-streaming UI, cancellation during a Provider turn, and model selection UI are not supported
 - Public Remote Relay, multiple devices, and multiple accounts remain research work
@@ -100,7 +100,7 @@ and the [public readiness checklist](docs/PUBLIC-ALPHA1-READINESS.md) for the re
 
 ## System requirements
 
-M.I.O. v0.1.0-alpha.1 targets 64-bit Windows 10 or Windows 11. It requires the Evergreen version of
+M.I.O. v0.1.0-alpha.2 targets 64-bit Windows 10 or Windows 11. It requires the Evergreen version of
 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/).
 This is the shared Runtime used by Windows desktop apps to display their UI, not the Microsoft Edge
 browser itself.
@@ -139,7 +139,7 @@ On first launch, choose `Sign in with ChatGPT` or the API key method described i
 instructions. M.I.O. detects `codex` from `PATH` or its standard installation location and launches
 `codex app-server`.
 
-In Windows alpha.1, Room workspace read/write is disabled because the read boundary through nested
+In Windows alpha.2, Room workspace read/write is disabled because the read boundary through nested
 junctions remains unresolved. Regardless of the sandbox configuration on the Codex side, turns that
 include a workspace are rejected before the Provider starts. M.I.O. does not modify Codex's
 `config.toml`. Chat-only Codex turns remain available.

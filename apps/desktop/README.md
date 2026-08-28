@@ -1,6 +1,6 @@
 # M.I.O. Desktop
 
-**M.I.O. (Malevolent Immortal Overdrive)** v0.1.0-alpha.1のWindows desktop実装です。内部のcrate、package、command、environment variableには互換性維持のため`moe` / `MOE_`識別子が残ります。
+**M.I.O. (Malevolent Immortal Overdrive)** v0.1.0-alpha.2開発中のWindows desktop実装です。最新の公開版はv0.1.0-alpha.1です。内部のcrate、package、command、environment variableには互換性維持のため`moe` / `MOE_`識別子が残ります。
 
 ## Current Room boundary
 

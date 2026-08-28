@@ -8,6 +8,9 @@
 > として公開したsource-firstのα版です。評価と研究を目的としており、安定版ではありません。
 > 配布用インストーラー、コード署名、自動更新、安定版SLAはまだありません。
 
+`main` branchは現在`v0.1.0-alpha.2`の開発中です。公開済みのalpha.1 Release、tag、assetは
+履歴として固定し、alpha.2が公開されるまでは上記alpha.1が最新の配布版です。
+
 ## Screenshots
 
 ![M.I.O.の英語Talk Room。Codex、Claude Web、Geminiが参加する撮影専用UIデモ](docs/assets/screenshots/mio-talk-room.png)
@@ -204,15 +207,24 @@ npm.cmd run tauri:build
 
 `tauri:build` は開発確認用の `--no-bundle` buildです。インストーラーは生成しません。
 
-Windows x64向けのalpha.1検証用EXEは、次の専用scriptでbuildします。このscriptはfrontendを
+Windows x64向けのalpha検証用EXEは、次の専用scriptでbuildします。このscriptはfrontendを
 buildした後、Visual C++ Runtimeを静的linkしたrelease executableを生成し、SHA-256を
 表示します。installerやWebView2 Runtimeは同梱しません。
 
 ```powershell
-& .\scripts\build-alpha1-windows.ps1
+& .\scripts\build-alpha-windows.ps1
 ```
 
 生成先は `target/x86_64-pc-windows-msvc/release/moe-desktop.exe` です。
+
+Commit済みの状態から公開用source ZIPと検査manifestを作る場合は、次を使います。root package、
+desktop package、Tauri、Rust workspaceのversionが一致しない場合は生成を拒否します。
+
+```powershell
+& .\scripts\export-public-alpha.ps1 -Commit HEAD
+```
+
+未commitまたはstage済みのtracked差分がある場合も、安全のため生成を拒否します。
 
 ## 検証コマンド
 

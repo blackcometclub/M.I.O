@@ -16,6 +16,7 @@ $excludedPaths = @(
     "docs/HANDOFF_2026-08-12.md"
     "docs/HANDOFF_2026-08-12_RELAY_CLIENT.md"
     "docs/HANDOFF_2026-08-18_PUBLIC_ALPHA_NO_CLI.md"
+    "docs/HANDOFF_2026-08-27_POST_RELEASE_SOURCE_SMOKE.md"
 )
 
 function Invoke-RepositoryGit {
@@ -95,8 +96,63 @@ if (-not $resolvedCommit) {
 $resolvedCommit = $resolvedCommit.ToLowerInvariant()
 $shortCommit = $resolvedCommit.Substring(0, 12)
 
+function Get-CommitFileContent {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $output = @(
+        Invoke-RepositoryGit -GitArguments @(
+            "show"
+            "$resolvedCommit`:$Path"
+        )
+    )
+    return $output -join [Environment]::NewLine
+}
+
+$jsonVersionPaths = @(
+    "package.json"
+    "apps/desktop/package.json"
+    "apps/desktop/src-tauri/tauri.conf.json"
+)
+$versionByPath = [ordered]@{}
+foreach ($path in $jsonVersionPaths) {
+    try {
+        $metadata = (Get-CommitFileContent -Path $path) | ConvertFrom-Json
+    }
+    catch {
+        throw "Could not parse $path from commit $resolvedCommit."
+    }
+    $versionByPath[$path] = [string]$metadata.version
+}
+
+$cargoManifest = Get-CommitFileContent -Path "Cargo.toml"
+$cargoVersionMatch = [regex]::Match(
+    $cargoManifest,
+    '(?m)^version\s*=\s*"([^"]+)"\s*$'
+)
+if (-not $cargoVersionMatch.Success) {
+    throw "Could not read the workspace package version from Cargo.toml at commit $resolvedCommit."
+}
+$versionByPath["Cargo.toml"] = $cargoVersionMatch.Groups[1].Value
+
+$releaseVersion = $versionByPath["package.json"]
+if ($releaseVersion -notmatch '^\d+\.\d+\.\d+-alpha\.\d+$') {
+    throw "The committed package.json version is not a supported alpha version: $releaseVersion"
+}
+
+$versionMismatches = @(
+    $versionByPath.GetEnumerator() |
+        Where-Object { $_.Value -cne $releaseVersion } |
+        ForEach-Object { "$($_.Key)=$($_.Value)" }
+)
+if ($versionMismatches.Count -ne 0) {
+    throw "Committed release versions do not match package.json ($releaseVersion): $($versionMismatches -join ', ')"
+}
+
 if ([string]::IsNullOrWhiteSpace($Destination)) {
-    $destinationRoot = Join-Path $repositoryRoot ".tools\public-alpha1\$shortCommit"
+    $destinationRoot = Join-Path $repositoryRoot ".tools\public-alpha\$releaseVersion\$shortCommit"
 }
 elseif ([System.IO.Path]::IsPathRooted($Destination)) {
     $destinationRoot = [System.IO.Path]::GetFullPath($Destination)
@@ -113,7 +169,7 @@ $destinationParent = Split-Path -Parent $destinationRoot
 New-Item -ItemType Directory -Path $destinationParent -Force | Out-Null
 New-Item -ItemType Directory -Path $destinationRoot | Out-Null
 
-$archivePath = Join-Path $destinationRoot "mio-v0.1.0-alpha.1-source.zip"
+$archivePath = Join-Path $destinationRoot "mio-v$releaseVersion-source.zip"
 $sourceRoot = Join-Path $destinationRoot "source"
 $manifestPath = Join-Path $destinationRoot "snapshot-manifest.json"
 $fileListPath = Join-Path $destinationRoot "source-files.txt"
@@ -173,7 +229,7 @@ $actualFiles | Set-Content -LiteralPath $fileListPath -Encoding UTF8
 $archiveHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $archivePath).Hash.ToLowerInvariant()
 $manifest = [ordered]@{
     product = "M.I.O."
-    version = "0.1.0-alpha.1"
+    version = $releaseVersion
     sourceCommit = $resolvedCommit
     sourceFileCount = $actualFiles.Count
     archiveFile = [System.IO.Path]::GetFileName($archivePath)
@@ -187,6 +243,7 @@ $manifest |
     Set-Content -LiteralPath $manifestPath -Encoding UTF8
 
 Write-Host "M.I.O. public alpha source snapshot created."
+Write-Host "Version: $releaseVersion"
 Write-Host "Source commit: $resolvedCommit"
 Write-Host "Source files: $($actualFiles.Count)"
 Write-Host "Archive: $archivePath"

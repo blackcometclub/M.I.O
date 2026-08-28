@@ -36,6 +36,22 @@ else {
 }
 $locationPushed = $false
 
+function Restore-ProcessEnvironmentVariable {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name,
+        [AllowNull()]
+        $Value
+    )
+
+    if ($null -eq $Value) {
+        Remove-Item -LiteralPath "Env:$Name" -ErrorAction SilentlyContinue
+        return
+    }
+
+    [Environment]::SetEnvironmentVariable($Name, $Value, "Process")
+}
+
 if (-not (Test-Path -LiteralPath $tauriExecutable -PathType Leaf)) {
     throw "The local Tauri CLI was not found. Run npm ci before building the Windows alpha executable."
 }
@@ -69,6 +85,6 @@ finally {
     if ($locationPushed) {
         Pop-Location
     }
-    [Environment]::SetEnvironmentVariable($rustFlagsVariable, $previousRustFlags, "Process")
-    [Environment]::SetEnvironmentVariable($pathVariable, $previousPath, "Process")
+    Restore-ProcessEnvironmentVariable -Name $rustFlagsVariable -Value $previousRustFlags
+    Restore-ProcessEnvironmentVariable -Name $pathVariable -Value $previousPath
 }

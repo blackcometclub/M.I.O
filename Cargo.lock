@@ -2292,14 +2292,14 @@ dependencies = [
 
 [[package]]
 name = "moe-adapter-sdk"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 dependencies = [
  "moe-protocol",
 ]
 
 [[package]]
 name = "moe-core"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 dependencies = [
  "moe-protocol",
  "serde",
@@ -2308,14 +2308,14 @@ dependencies = [
 
 [[package]]
 name = "moe-credential-store"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 dependencies = [
  "windows-sys 0.61.2",
 ]
 
 [[package]]
 name = "moe-desktop"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 dependencies = [
  "axum",
  "fontdb",
@@ -2342,7 +2342,7 @@ dependencies = [
 
 [[package]]
 name = "moe-mcp"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 dependencies = [
  "moe-core",
  "moe-protocol",
@@ -2352,7 +2352,7 @@ dependencies = [
 
 [[package]]
 name = "moe-protocol"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 dependencies = [
  "serde",
  "serde_json",
@@ -2360,14 +2360,14 @@ dependencies = [
 
 [[package]]
 name = "moe-relay-client"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 dependencies = [
  "moe-credential-store",
 ]
 
 [[package]]
 name = "moe-relay-transport"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 dependencies = [
  "moe-credential-store",
  "moe-protocol",
@@ -2381,7 +2381,7 @@ dependencies = [
 
 [[package]]
 name = "moe-rust-relay-pairing-spike"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 dependencies = [
  "moe-credential-store",
  "moe-desktop",
@@ -2392,7 +2392,7 @@ dependencies = [
 
 [[package]]
 name = "moe-windows-credential-store-spike"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 dependencies = [
  "moe-credential-store",
 ]

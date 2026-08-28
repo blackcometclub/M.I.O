@@ -2,6 +2,19 @@
 
 M.I.O. (Malevolent Immortal Overdrive) の主な変更を記録します。
 
+## v0.1.0-alpha.2 — Unreleased
+
+Status: 開発中。Release、tag、assetはまだ作成していません。
+
+### Fixed
+
+- Rustupの標準導入先に`cargo.exe`があり、起動中のPowerShellの`PATH`へまだ反映されていない場合も、Windows alpha EXEをbuildできるようにした
+
+### Changed
+
+- Windows alpha buildとpublic source exportのscriptを版番号非依存にし、committed manifestのversionを使用する
+- 公開済みのalpha.1 Release、tag、assetを変更せず、alpha.2を別Releaseとして準備する
+
 ## v0.1.0-alpha.1 — Public alpha release
 
 Status: 2026-08-27に履歴分離済みrepositoryからGitHub Prereleaseを再公開。安定版ではありません。

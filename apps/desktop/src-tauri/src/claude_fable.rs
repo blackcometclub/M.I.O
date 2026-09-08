@@ -14,7 +14,11 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};
 
-const MODEL: &str = "claude-fable-5";
+use crate::provider_process_tree::ProviderProcessTree;
+
+const FABLE_MODEL: &str = "claude-fable-5";
+const OPUS_MODEL: &str = "claude-opus-5";
+const SONNET_MODEL: &str = "claude-sonnet-5";
 const TURN_TIMEOUT: Duration = Duration::from_secs(210);
 const MAXIMUM_STDOUT_BYTES: usize = 65_536;
 const MAXIMUM_STDERR_BYTES: usize = 16_384;
@@ -116,7 +120,7 @@ impl ClaudeFableAdapter {
             command.creation_flags(0x0800_0000);
         }
 
-        let output = run_bounded(command, TURN_TIMEOUT)?;
+        let output = run_bounded(command, TURN_TIMEOUT, request.cancellation())?;
         if !output.status.success() || output.stdout.exceeded {
             return Err(TextTurnError::Rejected);
         }
@@ -144,8 +148,6 @@ fn claude_args(request: &TextTurnRequest) -> Result<Vec<OsString>, TextTurnError
         OsString::from(request.prompt()),
         OsString::from("--output-format"),
         OsString::from("json"),
-        OsString::from("--model"),
-        OsString::from(MODEL),
         OsString::from("--tools"),
         OsString::new(),
         OsString::from("--disable-slash-commands"),
@@ -154,6 +156,13 @@ fn claude_args(request: &TextTurnRequest) -> Result<Vec<OsString>, TextTurnError
         OsString::from("--permission-mode"),
         OsString::from("dontAsk"),
     ];
+    if let Some(model) = request.model() {
+        if !matches!(model, FABLE_MODEL | OPUS_MODEL | SONNET_MODEL) {
+            return Err(TextTurnError::InvalidResponse);
+        }
+        args.push(OsString::from("--model"));
+        args.push(OsString::from(model));
+    }
     match request.continuity() {
         Some(TextTurnContinuity::Resume { session_id }) => {
             if !valid_session_id(session_id) {
@@ -188,26 +197,61 @@ struct ProcessOutput {
     stdout: BoundedBytes,
 }
 
-fn run_bounded(mut command: Command, timeout: Duration) -> Result<ProcessOutput, TextTurnError> {
+fn run_bounded(
+    mut command: Command,
+    timeout: Duration,
+    cancellation: &moe_adapter_sdk::TextTurnCancellation,
+) -> Result<ProcessOutput, TextTurnError> {
+    if cancellation.is_cancelled() {
+        return Err(TextTurnError::Cancelled);
+    }
     let mut child = command.spawn().map_err(|_| TextTurnError::Unavailable)?;
-    let stdout = child.stdout.take().ok_or(TextTurnError::Unavailable)?;
-    let stderr = child.stderr.take().ok_or(TextTurnError::Unavailable)?;
+    let mut process_tree = ProviderProcessTree::attach(&child).map_err(|_| {
+        let _ = child.kill();
+        let _ = child.wait();
+        TextTurnError::Unavailable
+    })?;
+    let stdout = match child.stdout.take() {
+        Some(stdout) => stdout,
+        None => {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(TextTurnError::Unavailable);
+        }
+    };
+    let stderr = match child.stderr.take() {
+        Some(stderr) => stderr,
+        None => {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(TextTurnError::Unavailable);
+        }
+    };
     let stdout_reader = thread::spawn(move || read_bounded(stdout, MAXIMUM_STDOUT_BYTES));
     let stderr_reader = thread::spawn(move || read_bounded(stderr, MAXIMUM_STDERR_BYTES));
     let deadline = Instant::now() + timeout;
     let status = loop {
-        if let Some(status) = child.try_wait().map_err(|_| TextTurnError::Unavailable)? {
-            break status;
+        if cancellation.is_cancelled() {
+            process_tree.terminate(&mut child);
+            // Do not join after a forced stop. A provider descendant can inherit
+            // these pipes and otherwise keep the Room turn blocked indefinitely.
+            return Err(TextTurnError::Cancelled);
+        }
+        match child.try_wait() {
+            Ok(Some(status)) => break status,
+            Ok(None) => {}
+            Err(_) => {
+                process_tree.terminate(&mut child);
+                return Err(TextTurnError::Unavailable);
+            }
         }
         if Instant::now() >= deadline {
-            let _ = child.kill();
-            let _ = child.wait();
-            let _ = stdout_reader.join();
-            let _ = stderr_reader.join();
+            process_tree.terminate(&mut child);
             return Err(TextTurnError::TimedOut);
         }
         thread::sleep(Duration::from_millis(25));
     };
+    drop(process_tree);
     let stdout = stdout_reader
         .join()
         .map_err(|_| TextTurnError::Unavailable)?;
@@ -258,16 +302,28 @@ mod tests {
     use super::*;
 
     #[test]
+    fn cancelled_turn_does_not_start_the_cli() {
+        let cancellation = moe_adapter_sdk::TextTurnCancellation::default();
+        cancellation.cancel();
+        let command = Command::new("mio-test-command-that-must-not-start");
+        assert!(matches!(
+            run_bounded(command, Duration::from_secs(1), &cancellation),
+            Err(TextTurnError::Cancelled)
+        ));
+    }
+
+    #[test]
     fn builds_tool_free_fable_arguments_and_resume() {
         let start = claude_args(
             &TextTurnRequest::new("dispatch-1".to_owned(), "hello".to_owned())
+                .with_model(FABLE_MODEL.to_owned())
                 .with_continuity(TextTurnContinuity::StartPersistent),
         )
         .unwrap();
         assert!(
             start
                 .windows(2)
-                .any(|args| args[0] == "--model" && args[1] == MODEL)
+                .any(|args| args[0] == "--model" && args[1] == FABLE_MODEL)
         );
         assert!(
             start
@@ -286,6 +342,32 @@ mod tests {
         assert!(resumed.windows(2).any(|args| {
             args[0] == "--resume" && args[1] == "d1e9e4f2-96cc-424d-a60e-fb18035ba6f4"
         }));
+
+        let provider_default = claude_args(&TextTurnRequest::new(
+            "dispatch-default".to_owned(),
+            "hello".to_owned(),
+        ))
+        .unwrap();
+        assert!(!provider_default.iter().any(|arg| arg == "--model"));
+        assert_eq!(
+            claude_args(
+                &TextTurnRequest::new("dispatch-invalid".to_owned(), "hello".to_owned())
+                    .with_model("claude-made-up".to_owned()),
+            ),
+            Err(TextTurnError::InvalidResponse)
+        );
+
+        for model in [OPUS_MODEL, SONNET_MODEL] {
+            let args = claude_args(
+                &TextTurnRequest::new(format!("dispatch-{model}"), "hello".to_owned())
+                    .with_model(model.to_owned()),
+            )
+            .unwrap();
+            assert!(
+                args.windows(2)
+                    .any(|pair| pair[0] == "--model" && pair[1] == model)
+            );
+        }
     }
 
     #[test]

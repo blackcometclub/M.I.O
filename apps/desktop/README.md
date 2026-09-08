@@ -1,6 +1,6 @@
 # M.I.O. Desktop
 
-**M.I.O. (Malevolent Immortal Overdrive)** v0.1.0-alpha.2開発中のWindows desktop実装です。最新の公開版はv0.1.0-alpha.1です。内部のcrate、package、command、environment variableには互換性維持のため`moe` / `MOE_`識別子が残ります。
+**M.I.O. (Malevolent Immortal Overdrive)** v1.0.3のWindows desktop実装です。Microsoft Storeでは署名済み`1.0.2.0`、BOOTH／itch.ioでは未署名`1.0.3` Previewを公開し、Storeの`1.0.3.0`更新は認定中です。内部のcrate、package、command、environment variableには互換性維持のため`moe` / `MOE_`識別子が残ります。
 
 ## Current Room boundary
 
@@ -8,9 +8,9 @@ Desktop Roomは3つの標準RoomをRust catalogから読み、Tauri版のRoom切
 
 Tauri 2、React、TypeScriptで構成するM.I.O.のDesktopアプリです。
 
-## Current alpha product path
+## Current V1 product path
 
-- Codex、Gemini Antigravity、Claude Fable、Grokの利用可能なローカルCLIへ会話を配送します。
+- Codex、Gemini Antigravity、Claude Code（Fable 5／Opus 5／Sonnet 5）、Grokの利用可能なローカルCLIへ会話を配送します。
 - Direct modeではOwnerが宛先を明示し、Conductor modeではCodexが1 round・最大3 workerまでを分担します。
 - Codexだけが、Roomごとに明示選択されたworkspaceのchat-only / read / writeに対応します。
 - ChatGPT Web、OpenAI API、Generic MCP client、Custom adapterは現在未対応です。
@@ -67,4 +67,4 @@ Tauri画面の `useRooms` は起動時にboundedな `desktop_room_list` と `des
 
 全Roomのユーザーmessage送信は `desktop_room_write_message` でRust Roomへ保存します。client-generated message IDをidempotency keyとして、同じ内容の再試行は二重追加せず、内容が違うID再利用は拒否します。成功後だけRust responseを画面へ追加し、失敗時は本文を入力欄に残して直下へ再試行案内を表示します。mutation後のsnapshotは64 MiB上限のversioned JSONへtemp + 1世代backupで保存し、file失敗時はmemoryも書込み前へ戻します。Tauriでは接続前ダミーAI返答を出しません。browser previewだけはローカルデモ送信を維持します。
 
-対応AI宛messageは保存成功後に `desktop_room_dispatch_message` で各製品adapterへ渡します。Codex driverはglobal npm版、`MOE_CODEX_BIN`、`MOE_CODEX_CLI_JS`の明示launcherを使い、Roomのaccess modeに応じたpermission profileとworkspace境界を動的設定します。Gemini Antigravity、Claude Fable、Grokは会話専用で、filesystemやtool accessを許可しません。1つのsource message / recipientにつき外部turnは一度だけ開始し、結果不明後は自動再送しません。各AIの最終応答だけを同じRust Roomへ保存し、未接続・未対応Providerをダミー応答へfallbackしません。
+対応AI宛messageは保存成功後に `desktop_room_dispatch_message` で各製品adapterへ渡します。Codex driverはglobal npm版、`MOE_CODEX_BIN`、`MOE_CODEX_CLI_JS`の明示launcherを使い、Roomのaccess modeに応じたpermission profileとworkspace境界を動的設定します。Gemini Antigravity、Claude Code、Grokは会話専用で、filesystemやtool accessを許可しません。1つのsource message / recipientにつき外部turnは一度だけ開始し、結果不明後は自動再送しません。各AIの最終応答だけを同じRust Roomへ保存し、未接続・未対応Providerをダミー応答へfallbackしません。

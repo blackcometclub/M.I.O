@@ -9,7 +9,10 @@ use crate::room_orchestration_ledger::{
 };
 use crate::room_source::{DesktopRoomContext, DesktopRoomSource};
 use crate::time::current_rfc3339_timestamp;
-use moe_adapter_sdk::{TextTurnAdapter, TextTurnContinuity, TextTurnError, TextTurnRequest};
+use crate::turn_cancellation::DesktopTurnCancellations;
+use moe_adapter_sdk::{
+    TextTurnAdapter, TextTurnCancellation, TextTurnContinuity, TextTurnError, TextTurnRequest,
+};
 use moe_core::{
     ConductorNextAction, ConductorOperation, ConductorOperationIds, ConductorOperationStage,
     ConductorParticipant, ConductorPlanContext, ConductorPlanMode, RoomMessage, RoomMessageDraft,
@@ -71,32 +74,53 @@ struct WorkerExecutionResult {
 }
 
 trait ConductorTurnAdapter: Send + Sync {
-    fn plan(&self, operation_id: &str, prompt: String) -> Result<ConductorPlanTurn, TextTurnError>;
+    fn plan(
+        &self,
+        operation_id: &str,
+        prompt: String,
+        cancellation: TextTurnCancellation,
+    ) -> Result<ConductorPlanTurn, TextTurnError>;
 
     fn synthesize(
         &self,
         operation_id: &str,
         session_id: &str,
         prompt: String,
+        cancellation: TextTurnCancellation,
     ) -> Result<String, TextTurnError>;
 }
 
 struct CodexConductorTurnAdapter {
     codex: Arc<dyn TextTurnAdapter>,
+    profiles: Arc<DesktopParticipantProfiles>,
 }
 
 impl CodexConductorTurnAdapter {
-    fn new(codex: Arc<dyn TextTurnAdapter>) -> Self {
-        Self { codex }
+    fn new(codex: Arc<dyn TextTurnAdapter>, profiles: Arc<DesktopParticipantProfiles>) -> Self {
+        Self { codex, profiles }
+    }
+
+    fn with_selected_model(&self, request: TextTurnRequest) -> TextTurnRequest {
+        match self.profiles.ai_model(CODEX_PARTICIPANT_ID) {
+            Some(model) => request.with_model(model),
+            None => request,
+        }
     }
 }
 
 impl ConductorTurnAdapter for CodexConductorTurnAdapter {
-    fn plan(&self, operation_id: &str, prompt: String) -> Result<ConductorPlanTurn, TextTurnError> {
-        let response = self.codex.run_text_turn(
-            &TextTurnRequest::new(format!("{operation_id}-plan"), prompt)
+    fn plan(
+        &self,
+        operation_id: &str,
+        prompt: String,
+        cancellation: TextTurnCancellation,
+    ) -> Result<ConductorPlanTurn, TextTurnError> {
+        let request = self.with_selected_model(
+            TextTurnRequest::new(format!("{operation_id}-plan"), prompt)
+                .with_cancellation(cancellation)
                 .with_continuity(TextTurnContinuity::StartPersistent),
-        )?;
+        );
+        let response = self.codex.run_text_turn(&request)?;
         let session_id = response
             .session_id()
             .filter(|session_id| valid_session_id(session_id))
@@ -112,14 +136,17 @@ impl ConductorTurnAdapter for CodexConductorTurnAdapter {
         operation_id: &str,
         session_id: &str,
         prompt: String,
+        cancellation: TextTurnCancellation,
     ) -> Result<String, TextTurnError> {
         if !valid_session_id(session_id) {
             return Err(TextTurnError::InvalidResponse);
         }
-        let response = self.codex.run_text_turn(
-            &TextTurnRequest::new(format!("{operation_id}-synthesis"), prompt)
+        let request = self.with_selected_model(
+            TextTurnRequest::new(format!("{operation_id}-synthesis"), prompt)
+                .with_cancellation(cancellation)
                 .with_continuity(TextTurnContinuity::resume(session_id.to_owned())),
-        )?;
+        );
+        let response = self.codex.run_text_turn(&request)?;
         if response.session_id() != Some(session_id) || response.text().trim().is_empty() {
             return Err(TextTurnError::InvalidResponse);
         }
@@ -163,6 +190,7 @@ pub(crate) struct DesktopRoomOrchestrator {
     profiles: Arc<DesktopParticipantProfiles>,
     ledger: Arc<DesktopRoomOrchestrationLedger>,
     operation_gate: Mutex<()>,
+    cancellations: Arc<DesktopTurnCancellations>,
 }
 
 impl DesktopRoomOrchestrator {
@@ -182,7 +210,12 @@ impl DesktopRoomOrchestrator {
             profiles,
             ledger,
             operation_gate: Mutex::new(()),
+            cancellations: Arc::new(DesktopTurnCancellations::default()),
         }
+    }
+
+    pub(crate) fn cancel_room_turns(&self, room_id: &str) -> usize {
+        self.cancellations.cancel_room(room_id)
     }
 
     fn orchestrate(
@@ -310,6 +343,17 @@ impl DesktopRoomOrchestrator {
         self.ledger
             .mark_planning(&record.operation_id, &timestamp()?)
             .map_err(map_ledger_error)?;
+        let plan_dispatch_id = format!("{}-plan", record.operation_id);
+        let active_turn = match self
+            .cancellations
+            .register(&source_message.room_id, &plan_dispatch_id)
+        {
+            Ok(active_turn) => active_turn,
+            Err(_) => {
+                self.mark_failed(&record.operation_id);
+                return Err(unavailable());
+            }
+        };
         let plan_turn = match self.conductor.plan(
             &record.operation_id,
             planning_prompt(
@@ -317,8 +361,10 @@ impl DesktopRoomOrchestrator {
                 source_message,
                 conductor_id,
                 self.workers.as_ref(),
+                self.profiles.as_ref(),
                 &self.owner_display_name(&source_message.author_id),
             ),
+            active_turn.cancellation(),
         ) {
             Ok(turn) => turn,
             Err(_) => {
@@ -541,6 +587,17 @@ impl DesktopRoomOrchestrator {
         self.ledger
             .mark_synthesizing(&record.operation_id, &timestamp()?)
             .map_err(map_ledger_error)?;
+        let synthesis_dispatch_id = format!("{}-synthesis", record.operation_id);
+        let active_turn = match self
+            .cancellations
+            .register(&source_message.room_id, &synthesis_dispatch_id)
+        {
+            Ok(active_turn) => active_turn,
+            Err(_) => {
+                self.mark_failed(&record.operation_id);
+                return Err(unavailable());
+            }
+        };
         let answer = match self.conductor.synthesize(
             &record.operation_id,
             session_id,
@@ -549,6 +606,7 @@ impl DesktopRoomOrchestrator {
                 &outcomes,
                 &self.owner_display_name(&source_message.author_id),
             ),
+            active_turn.cancellation(),
         ) {
             Ok(answer) => answer,
             Err(_) => {
@@ -669,6 +727,7 @@ fn planning_prompt(
     source_message: &RoomMessage,
     conductor_id: &str,
     workers: &dyn OrchestrationWorkerAdapter,
+    profiles: &DesktopParticipantProfiles,
     owner_display_name: &str,
 ) -> String {
     let available_workers = context
@@ -678,9 +737,12 @@ fn planning_prompt(
         .filter(|participant_id| participant_id.as_str() != conductor_id)
         .filter(|participant_id| workers.supports_worker(participant_id))
         .map(|participant_id| {
+            let display_name = profiles
+                .display_name(participant_id)
+                .or_else(|| context.participant_names.get(participant_id).cloned());
             json!({
                 "participantId": participant_id,
-                "displayName": context.participant_names.get(participant_id),
+                "displayName": display_name,
             })
         })
         .collect::<Vec<_>>();
@@ -788,7 +850,7 @@ pub(crate) fn product_room_orchestrator(
     ledger: Arc<DesktopRoomOrchestrationLedger>,
 ) -> Arc<DesktopRoomOrchestrator> {
     Arc::new(DesktopRoomOrchestrator::new(
-        Arc::new(CodexConductorTurnAdapter::new(codex)),
+        Arc::new(CodexConductorTurnAdapter::new(codex, profiles.clone())),
         workers,
         settings,
         capabilities,
@@ -848,6 +910,7 @@ mod tests {
             &self,
             _operation_id: &str,
             prompt: String,
+            _cancellation: TextTurnCancellation,
         ) -> Result<ConductorPlanTurn, TextTurnError> {
             self.plan_prompts.lock().unwrap().push(prompt);
             self.plans.lock().unwrap().pop_front().unwrap()
@@ -858,6 +921,7 @@ mod tests {
             _operation_id: &str,
             _session_id: &str,
             prompt: String,
+            _cancellation: TextTurnCancellation,
         ) -> Result<String, TextTurnError> {
             self.synthesis_prompts.lock().unwrap().push(prompt);
             self.syntheses.lock().unwrap().pop_front().unwrap()
@@ -952,13 +1016,23 @@ mod tests {
         conductor: Arc<dyn ConductorTurnAdapter>,
         workers: Arc<dyn OrchestrationWorkerAdapter>,
     ) -> (DesktopRoomOrchestrator, Arc<DesktopRoomOrchestrationLedger>) {
+        service_with_profiles(
+            conductor,
+            workers,
+            DesktopParticipantProfiles::for_tests(&[(OWNER_PARTICIPANT_ID, "Sample Owner")]),
+        )
+    }
+
+    fn service_with_profiles(
+        conductor: Arc<dyn ConductorTurnAdapter>,
+        workers: Arc<dyn OrchestrationWorkerAdapter>,
+        profiles: Arc<DesktopParticipantProfiles>,
+    ) -> (DesktopRoomOrchestrator, Arc<DesktopRoomOrchestrationLedger>) {
         let settings = DesktopRoomConductorSettings::in_memory();
         settings
             .set_conductor("moe-dev-room", CODEX_PARTICIPANT_ID)
             .unwrap();
         let capabilities = DesktopConductorCapabilities::with_conductor(CODEX_PARTICIPANT_ID);
-        let profiles =
-            DesktopParticipantProfiles::for_tests(&[(OWNER_PARTICIPANT_ID, "Sample Owner")]);
         let ledger = DesktopRoomOrchestrationLedger::in_memory();
         (
             DesktopRoomOrchestrator::new(
@@ -1044,6 +1118,58 @@ mod tests {
         assert!(prompt.contains("completed"));
         assert!(prompt.contains("failed"));
         assert!(prompt.contains("unknown"));
+        let plan_prompt = conductor.plan_prompts.lock().unwrap()[0].clone();
+        let (_, packet_json) = plan_prompt.split_once("Input packet: ").unwrap();
+        let packet: serde_json::Value = serde_json::from_str(packet_json).unwrap();
+        let claude = packet["availableWorkers"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|worker| worker["participantId"] == "claude-code")
+            .unwrap();
+        assert_eq!(claude["displayName"], "Claude Code");
+    }
+
+    #[test]
+    fn planning_uses_profile_display_name_with_stable_worker_id() {
+        let source = desktop_room_source();
+        source
+            .add_room_participant("moe-dev-room", "claude-code", "2026-08-14T00:00:00Z")
+            .unwrap();
+        source_message_with_body(
+            source.as_ref(),
+            "orchestrate-profile-display-name",
+            "Ask Claude Fable to summarize this.",
+        );
+        let conductor = FakeConductor::new(
+            vec![Ok(plan(
+                r#"{"version":1,"mode":"delegate","directAnswer":null,"delegations":[{"targetParticipantId":"claude-code","task":"summarize"}]}"#,
+            ))],
+            vec![Ok("integrated final".to_owned())],
+        );
+        let workers = FakeWorkers::new(&[("claude-code", FakeWorkerOutcome::Completed)]);
+        let profiles = DesktopParticipantProfiles::for_tests(&[
+            (OWNER_PARTICIPANT_ID, "Sample Owner"),
+            ("claude-code", "Claude Fable"),
+        ]);
+        let (service, _) = service_with_profiles(conductor.clone(), workers, profiles);
+
+        let completed = service
+            .orchestrate(
+                source.as_ref(),
+                "moe-dev-room",
+                "orchestrate-profile-display-name",
+            )
+            .unwrap();
+        assert_eq!(completed.status, RoomOrchestrationStatus::Completed);
+
+        let prompt = conductor.plan_prompts.lock().unwrap()[0].clone();
+        let (_, packet_json) = prompt.split_once("Input packet: ").unwrap();
+        let packet: serde_json::Value = serde_json::from_str(packet_json).unwrap();
+        let workers = packet["availableWorkers"].as_array().unwrap();
+        assert_eq!(workers.len(), 1);
+        assert_eq!(workers[0]["participantId"], "claude-code");
+        assert_eq!(workers[0]["displayName"], "Claude Fable");
     }
 
     #[test]
@@ -1055,7 +1181,7 @@ mod tests {
         source_message_with_body(
             source.as_ref(),
             "orchestrate-display-name",
-            "Ask Claude Fable to summarize this, then report every worker status.",
+            "Ask Claude Code to summarize this, then report every worker status.",
         );
         let conductor = FakeConductor::new(
             vec![Ok(plan(
@@ -1224,10 +1350,26 @@ mod tests {
         let recording = Arc::new(RecordingTextAdapter {
             requests: Mutex::new(Vec::new()),
         });
-        let adapter = CodexConductorTurnAdapter::new(recording.clone());
-        let plan = adapter.plan("operation-1", "plan".to_owned()).unwrap();
+        let profiles = DesktopParticipantProfiles::for_tests_with_model(&[(
+            CODEX_PARTICIPANT_ID,
+            "Codex",
+            "gpt-5.6-terra",
+        )]);
+        let adapter = CodexConductorTurnAdapter::new(recording.clone(), profiles);
+        let plan = adapter
+            .plan(
+                "operation-1",
+                "plan".to_owned(),
+                TextTurnCancellation::default(),
+            )
+            .unwrap();
         adapter
-            .synthesize("operation-1", &plan.session_id, "synthesize".to_owned())
+            .synthesize(
+                "operation-1",
+                &plan.session_id,
+                "synthesize".to_owned(),
+                TextTurnCancellation::default(),
+            )
             .unwrap();
         let requests = recording.requests.lock().unwrap();
         assert_eq!(
@@ -1238,5 +1380,23 @@ mod tests {
             requests[1].continuity(),
             Some(&TextTurnContinuity::resume("session-1".to_owned()))
         );
+        assert_eq!(requests[0].model(), Some("gpt-5.6-terra"));
+        assert_eq!(requests[1].model(), Some("gpt-5.6-terra"));
+        drop(requests);
+
+        let provider_default = Arc::new(RecordingTextAdapter {
+            requests: Mutex::new(Vec::new()),
+        });
+        CodexConductorTurnAdapter::new(
+            provider_default.clone(),
+            DesktopParticipantProfiles::for_tests(&[]),
+        )
+        .plan(
+            "operation-default",
+            "plan".to_owned(),
+            TextTurnCancellation::default(),
+        )
+        .unwrap();
+        assert_eq!(provider_default.requests.lock().unwrap()[0].model(), None);
     }
 }

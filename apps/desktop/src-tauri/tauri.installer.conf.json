@@ -1,14 +1,21 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
+  "productName": "M.I.O",
   "bundle": {
     "active": true,
     "targets": ["nsis"],
+    "externalBin": ["../../../.tools/tauri-sidecars/mio-command-helper"],
+    "licenseFile": "../../../LICENSE",
+    "resources": {
+      "../../../THIRD-PARTY-NOTICES.txt": "THIRD-PARTY-NOTICES.txt"
+    },
     "windows": {
       "webviewInstallMode": {
         "type": "downloadBootstrapper"
       },
       "nsis": {
-        "installMode": "currentUser"
+        "installMode": "perMachine",
+        "installerHooks": "nsis/installer-hooks.nsh"
       }
     }
   }

@@ -1,0 +1,9 @@
+[package]
+name = "moe-git-status-broker"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+git2 = { version = "0.21.0", default-features = false }

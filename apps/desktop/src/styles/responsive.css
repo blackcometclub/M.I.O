@@ -15,8 +15,7 @@
     grid-row: 2;
   }
 
-  .participant-copy span,
-  .brand-lockup span {
+  .participant-copy span {
     display: none;
   }
 }
@@ -36,6 +35,11 @@
     height: auto;
     min-height: calc(100vh - 16px);
     gap: 9px;
+  }
+
+  .moe-workbench.is-sidebar-collapsed {
+    grid-template-rows: minmax(620px, 1fr);
+    gap: 0;
   }
 
   .sidebar-resize-handle { display: none; }
@@ -83,6 +87,10 @@
 
   .composer-hint {
     display: none;
+  }
+
+  .composer-hint.is-background-turn {
+    display: flex;
   }
 }
 

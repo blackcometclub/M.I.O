@@ -77,6 +77,7 @@
 
 .profile-name-field,
 .profile-instructions-field,
+.profile-model-field,
 .profile-avatar-editor {
   display: grid;
   margin-top: 16px;
@@ -85,10 +86,12 @@
 
 .profile-name-field > span,
 .profile-instructions-field > span,
+.profile-model-field > span,
 .profile-avatar-editor > div:first-child strong,
 .profile-avatar-editor > div:first-child span { display: block; }
 .profile-name-field > span,
 .profile-instructions-field > span,
+.profile-model-field > span,
 .profile-avatar-editor > div:first-child strong { font-size: 0.68rem; font-weight: 900; }
 .profile-avatar-editor > div:first-child span { margin-top: 2px; color: #93826d; font-size: 0.57rem; }
 
@@ -116,6 +119,20 @@
   line-height: 1.5;
 }
 .profile-instructions-field output { position: absolute; right: 9px; bottom: 7px; color: #a18e75; font-size: 0.56rem; }
+
+.profile-model-field { display: block; margin-top: 12px; }
+.profile-model-field small,
+.profile-model-field em { display: block; margin: 3px 0 6px; color: #998873; font-size: 0.6rem; line-height: 1.45; }
+.profile-model-field em { margin: 6px 0 0; font-style: normal; }
+.profile-model-field select {
+  width: 100%;
+  border: 1px solid rgba(126, 96, 58, 0.24);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: rgba(255, 252, 244, 0.84);
+  color: #4d3a28;
+  font: inherit;
+}
 
 .profile-permissions-field {
   display: grid;

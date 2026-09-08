@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { LogicalSize } from "@tauri-apps/api/dpi";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import mioLogoUrl from "./assets/mio-logo.svg";
 import { AppearancePanel } from "./components/AppearancePanel";
 import { ArtworkStage } from "./components/ArtworkStage";
+import { CommandConfirmationDialog } from "./components/CommandConfirmationDialog";
 import { ConversationPanel } from "./components/ConversationPanel";
 import { MessageComposer } from "./components/MessageComposer";
 import { ParticipantBar } from "./components/ParticipantBar";
@@ -15,20 +18,58 @@ import { WindowControls } from "./components/WindowControls";
 import { WindowResizeHandles } from "./components/WindowResizeHandles";
 import { useAppearance } from "./hooks/useAppearance";
 import { useBootstrapStatus } from "./hooks/useBootstrapStatus";
+import { useCommandConfirmations } from "./hooks/useCommandConfirmations";
 import { useRooms } from "./hooks/useRooms";
+import { useContextMenuPolicy } from "./useContextMenuPolicy";
 import { useUiPreferences } from "./uiPreferences";
 
+const compactWindowWidth = 1080;
+const isTauri = "__TAURI_INTERNALS__" in window;
+
+function SidebarIcon() {
+  return (
+    <svg aria-hidden="true" className="sidebar-toggle-icon" viewBox="0 0 20 20">
+      <rect height="14" rx="2.5" width="15" x="2.5" y="3" />
+      <path d="M7.5 3v14" />
+    </svg>
+  );
+}
+
+async function currentWindowGeometry() {
+  const appWindow = getCurrentWindow();
+  if (await appWindow.isMaximized()) {
+    await appWindow.unmaximize();
+  }
+  const scaleFactor = await appWindow.scaleFactor();
+  return {
+    appWindow,
+    size: (await appWindow.outerSize()).toLogical(scaleFactor),
+  };
+}
+
 export function App() {
-  const { t } = useUiPreferences();
-  const { coreReady } = useBootstrapStatus();
+  useContextMenuPolicy();
+  const {
+    expandedWindowWidth,
+    imageFreeMode,
+    setExpandedWindowWidth,
+    setImageFreeMode,
+    setSidebarCollapsed,
+    sidebarCollapsed,
+    t,
+  } = useUiPreferences();
+  const { coreReady, toolchainReady } = useBootstrapStatus();
   const {
     activeRoom,
+    activeTurnRoomId,
     aiConnections,
     addParticipant,
     availableParticipants,
     backupRooms,
     changeConductorSendMode,
+    chooseBackupDirectory,
     chooseWorkspace,
+    codexTurnProgress,
     createRoom,
     closeParticipantMenu,
     clearWorkspace,
@@ -36,10 +77,14 @@ export function App() {
     configureRoomConductor,
     deleteRoom,
     dismissDispatchSafetyWarning,
+    dismissSendError,
     dispatchSafetyWarning,
     isParticipantMenuOpen,
     isAwaitingReply,
+    isAnotherRoomAwaitingReply,
+    isCancelling,
     isSending,
+    openBackupDirectory,
     participants,
     participantProfiles,
     recipientIds,
@@ -47,22 +92,28 @@ export function App() {
     rooms,
     roomSourceMode,
     roomMutationError,
+    roomBackupStatus,
+    roomConfigurationReady,
     roomConductor,
+    roomRestorePreview,
     roomWorkspace,
     roomDataMessage,
     removeParticipant,
     resetAiContinuity,
     renameRoom,
-    restoreLatestBackup,
+    previewLatestBackup,
+    restorePreviewedBackup,
     saveParticipantProfile,
     sendError,
     sendNotice,
     selectedRecipients,
     selectRoom,
     sendMessage,
+    cancelActiveTurn,
     toggleParticipantMenu,
     toggleRecipient,
     typingParticipantId,
+    useDefaultBackupDirectory,
   } = useRooms();
   const [isRoomSettingsOpen, setRoomSettingsOpen] = useState(false);
   const [isPreferencesOpen, setPreferencesOpen] = useState(false);
@@ -97,15 +148,74 @@ export function App() {
       : roomSourceMode === "loading"
         ? t("coreConnecting")
         : roomSourceMode === "backend"
-          ? t("coreReady")
+          ? t(toolchainReady ? "coreReady" : "coreReadyToolsChecking")
           : t("previewReady");
   const roomStatusReady =
     coreReady && roomSourceMode !== "loading" && roomSourceMode !== "error";
   const targetsBackendRoom = "__TAURI_INTERNALS__" in window;
   const usesBackendWrite = targetsBackendRoom && roomSourceMode === "backend";
+  const commandConfirmations = useCommandConfirmations({
+    enabled: usesBackendWrite,
+    roomId: activeRoom.id,
+    waiting: isAwaitingReply,
+  });
+  const activeTurnRoomName = activeTurnRoomId
+    ? rooms.find((room) => room.id === activeTurnRoomId)?.name ?? activeTurnRoomId
+    : null;
   const hasUnconnectedRecipient = selectedRecipients.some(
-    (participant) => aiConnections[participant.id]?.state !== "ready",
+    (participant) => {
+      const state = aiConnections[participant.id]?.state;
+      return state === "setupRequired" || state === "unsupported";
+    },
   );
+  useEffect(() => {
+    if (!imageFreeMode || !isTauri) return;
+    void currentWindowGeometry()
+      .then(async ({ appWindow, size }) => {
+        await appWindow.setSize(new LogicalSize(compactWindowWidth, Math.max(640, size.height)));
+      })
+      .catch((reason: unknown) => {
+        console.error("Initial display-mode window resize failed", reason);
+      });
+    // The saved mode is applied once when this window is created.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function toggleImageFreeMode() {
+    const nextMode = !imageFreeMode;
+    if (!isTauri) {
+      setImageFreeMode(nextMode);
+      return;
+    }
+    try {
+      const { appWindow, size } = await currentWindowGeometry();
+      let nextExpandedWindowWidth = expandedWindowWidth;
+      if (nextMode && size.width > compactWindowWidth) {
+        nextExpandedWindowWidth = size.width;
+        setExpandedWindowWidth(size.width);
+      }
+      await appWindow.setSize(new LogicalSize(
+        nextMode ? compactWindowWidth : nextExpandedWindowWidth,
+        Math.max(640, size.height),
+      ));
+      setImageFreeMode(nextMode);
+    } catch (reason) {
+      console.error("Image-free window resize failed", reason);
+    }
+  }
+
+  async function toggleSidebar() {
+    setSidebarCollapsed(!sidebarCollapsed);
+  }
+  useEffect(() => {
+    const workbench = workbenchRef.current;
+    if (!commandConfirmations.activeRequest || !workbench) return;
+    workbench.inert = true;
+    return () => {
+      workbench.inert = false;
+    };
+  }, [commandConfirmations.activeRequest, workbenchRef]);
+
   useEffect(() => {
     const openPanel = isRoomSettingsOpen
       ? roomSettingsPanelRef.current
@@ -160,42 +270,66 @@ export function App() {
   }, [clearRoomMutationError, closeAppearance, isAppearanceOpen, isPreferencesOpen, isRoomSettingsOpen]);
 
   return (
-    <main className="moe-window" style={surfaceStyle}>
+    <main className={`moe-window ${imageFreeMode ? "is-image-free" : ""}`} style={surfaceStyle}>
       <WindowResizeHandles />
       <section
-        className="moe-workbench"
+        className={`moe-workbench ${sidebarCollapsed ? "is-sidebar-collapsed" : ""}`}
         aria-label={t("appLabel")}
         ref={workbenchRef}
       >
-        <ArtworkStage artwork={artwork} />
-        <SidebarResizeHandle />
+        <ArtworkStage artwork={imageFreeMode ? null : artwork} />
+        {!sidebarCollapsed ? <SidebarResizeHandle /> : null}
 
-        <RoomSidebar
-          activeRoomId={activeRoom.id}
-          coreLabel={roomStatusLabel}
-          coreReady={roomStatusReady}
-          onCreateRoom={() => {
-            setRoomSettingsOpen(false);
-            setPreferencesOpen(false);
-            closeAppearance();
-            closeParticipantMenu();
-            void createRoom();
-          }}
-          onSelectRoom={(roomId) => {
-            setRoomSettingsOpen(false);
-            setPreferencesOpen(false);
-            closeAppearance();
-            closeParticipantMenu();
-            selectRoom(roomId);
-          }}
-          rooms={rooms}
-        />
+        {!sidebarCollapsed ? (
+          <RoomSidebar
+            activeRoomId={activeRoom.id}
+            activeTurnRoomId={activeTurnRoomId}
+            coreLabel={roomStatusLabel}
+            coreReady={roomStatusReady}
+            isBusy={isSending}
+            onCreateRoom={() => {
+              setRoomSettingsOpen(false);
+              setPreferencesOpen(false);
+              closeAppearance();
+              closeParticipantMenu();
+              void createRoom();
+            }}
+            onDeleteRoom={deleteRoom}
+            onOpenRoomSettings={(roomId) => {
+              setPreferencesOpen(false);
+              closeAppearance();
+              closeParticipantMenu();
+              clearRoomMutationError();
+              selectRoom(roomId);
+              setRoomSettingsOpen(true);
+            }}
+            onSelectRoom={(roomId) => {
+              setRoomSettingsOpen(false);
+              setPreferencesOpen(false);
+              closeAppearance();
+              closeParticipantMenu();
+              selectRoom(roomId);
+            }}
+            rooms={rooms}
+          />
+        ) : null}
 
         <section
-          className={`room-workspace ${backgroundImageUrl ? "has-custom-background" : ""}`}
+          className={`room-workspace ${!imageFreeMode && backgroundImageUrl ? "has-custom-background" : ""}`}
           aria-labelledby="current-room-title"
         >
           <header className="workspace-header" data-tauri-drag-region="">
+            <button
+              aria-expanded={!sidebarCollapsed}
+              className="icon-button sidebar-toggle-button"
+              onClick={() => void toggleSidebar()}
+              title={t(sidebarCollapsed ? "showRoomList" : "hideRoomList")}
+              type="button"
+            >
+              <SidebarIcon />
+              <span className="sr-only">{t(sidebarCollapsed ? "showRoomList" : "hideRoomList")}</span>
+            </button>
+
             <div className="room-heading" data-tauri-drag-region="">
               <span className="room-kicker" data-tauri-drag-region="">
                 TALK ROOM
@@ -256,6 +390,17 @@ export function App() {
             </button>
 
             <button
+              aria-pressed={imageFreeMode}
+              className={`icon-button image-mode-button ${imageFreeMode ? "is-active" : ""}`}
+              onClick={() => void toggleImageFreeMode()}
+              title={t(imageFreeMode ? "showDecorativeImages" : "hideDecorativeImages")}
+              type="button"
+            >
+              <span aria-hidden="true">{imageFreeMode ? "□" : "▧"}</span>
+              <span className="sr-only">{t(imageFreeMode ? "showDecorativeImages" : "hideDecorativeImages")}</span>
+            </button>
+
+            <button
               aria-expanded={isPreferencesOpen}
               className="icon-button preferences-button"
               onClick={() => {
@@ -276,9 +421,10 @@ export function App() {
 
             {isRoomSettingsOpen ? (
               <RoomSettingsPanel
+                backupStatus={roomBackupStatus}
                 error={roomMutationError}
                 dataMessage={roomDataMessage}
-                isBusy={isSending}
+                isBusy={isSending || activeTurnRoomId !== null || !roomConfigurationReady}
                 onClose={() => {
                   clearRoomMutationError();
                   setRoomSettingsOpen(false);
@@ -291,15 +437,20 @@ export function App() {
                   setEditingParticipantId(participantId);
                 }}
                 onBackup={backupRooms}
+                onChooseBackupDirectory={chooseBackupDirectory}
                 onChooseWorkspace={chooseWorkspace}
                 onClearWorkspace={clearWorkspace}
+                onOpenBackupDirectory={openBackupDirectory}
+                onPreviewLatestBackup={previewLatestBackup}
                 onRemoveParticipant={removeParticipant}
                 onResetAiContinuity={resetAiContinuity}
                 onRename={renameRoom}
-                onRestoreLatest={restoreLatestBackup}
+                onRestorePreviewedBackup={restorePreviewedBackup}
+                onUseDefaultBackupDirectory={useDefaultBackupDirectory}
                 participants={participants}
                 panelRef={roomSettingsPanelRef}
                 room={activeRoom}
+                restorePreview={roomRestorePreview}
                 roomConductor={roomConductor}
                 workspace={roomWorkspace}
               />
@@ -342,6 +493,7 @@ export function App() {
             connections={aiConnections}
             availableParticipants={availableParticipants}
             isMenuOpen={isParticipantMenuOpen}
+            isLocked={isAwaitingReply || !roomConfigurationReady}
             onAddParticipant={addParticipant}
             onMenuClose={closeParticipantMenu}
             onMenuToggle={toggleParticipantMenu}
@@ -352,9 +504,11 @@ export function App() {
           />
 
           <ConversationPanel
+            codexTurnProgress={codexTurnProgress}
             messages={activeRoom.messages}
             participants={participants}
-            typingParticipantId={typingParticipantId}
+            roomId={activeRoom.id}
+            typingParticipantId={isAwaitingReply ? typingParticipantId : null}
           />
 
           <MessageComposer
@@ -365,8 +519,14 @@ export function App() {
             }
             hint={
               usesBackendWrite
-                ? isAwaitingReply
-                  ? t("awaitingHint")
+                ? !roomConfigurationReady
+                  ? t("roomSettingsLoadingHint")
+                  : isAnotherRoomAwaitingReply && activeTurnRoomName
+                  ? t("anotherRoomAwaitingHint", { name: activeTurnRoomName })
+                  : isAwaitingReply
+                  ? commandConfirmations.activeRequest
+                    ? t("commandConfirmationWaitingHint")
+                    : t("awaitingHint")
                   : hasUnconnectedRecipient
                     ? t("unconnectedHint")
                     : t("sendHint")
@@ -374,10 +534,18 @@ export function App() {
                   ? t("roomUnavailableHint")
                   : t("demoHint")
             }
-            isAvailable={!targetsBackendRoom || roomSourceMode === "backend"}
+            isBackgroundTurn={isAnotherRoomAwaitingReply}
+            isAvailable={
+              (!targetsBackendRoom || roomSourceMode === "backend") &&
+              roomConfigurationReady &&
+              !isAnotherRoomAwaitingReply
+            }
             isAwaitingReply={isAwaitingReply}
+            isCancelling={isAwaitingReply && isCancelling}
             isSending={isSending}
+            onCancel={cancelActiveTurn}
             onDismissDispatchSafetyWarning={dismissDispatchSafetyWarning}
+            onDismissSendError={dismissSendError}
             onRemoveRecipient={toggleRecipient}
             onSendModeChange={changeConductorSendMode}
             onSend={sendMessage}
@@ -397,6 +565,15 @@ export function App() {
           participant={participants[editingParticipantId]}
           profile={participantProfiles[editingParticipantId]}
           roomWorkspace={roomWorkspace}
+        />
+      ) : null}
+      {commandConfirmations.activeRequest ? (
+        <CommandConfirmationDialog
+          error={commandConfirmations.error}
+          isResolving={commandConfirmations.isResolving}
+          onDecision={commandConfirmations.resolve}
+          remainingCount={commandConfirmations.remainingCount}
+          request={commandConfirmations.activeRequest}
         />
       ) : null}
     </main>

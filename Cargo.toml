@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+  "apps/command-helper",
   "apps/desktop/src-tauri",
   "crates/moe-adapter-sdk",
   "crates/moe-core",
@@ -9,12 +10,20 @@ members = [
   "crates/moe-protocol",
   "crates/moe-relay-client",
   "crates/moe-relay-transport",
+  "crates/moe-command-broker",
+  "crates/moe-command-helper-protocol",
+  "crates/moe-command-runner",
+  "crates/moe-git-status-broker",
+  "crates/moe-windows-command-runner",
+  "crates/moe-windows-command-launcher",
+  "crates/moe-workspace-broker",
   "spikes/rust-relay-pairing",
+  "spikes/windows-appcontainer-workspace",
   "spikes/windows-credential-store",
 ]
 
 [workspace.package]
-version = "0.1.0-alpha.2"
+version = "1.0.4"
 edition = "2024"
 license = "AGPL-3.0-only"
 rust-version = "1.96"

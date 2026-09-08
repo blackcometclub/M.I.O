@@ -341,6 +341,21 @@ impl DesktopRoomSource {
         }
         Ok(())
     }
+
+    pub(crate) fn inspect_snapshot(
+        &self,
+        source: PathBuf,
+    ) -> Result<usize, DesktopRoomPersistenceError> {
+        if !valid_external_snapshot_path(&source) || !source.is_file() {
+            return Err(DesktopRoomPersistenceError::InvalidFile);
+        }
+        let mut snapshot = load_room_file(&source)?;
+        normalize_owner_participant(&mut snapshot)?;
+        let (snapshot, _) = merge_bundled_catalog(snapshot);
+        InMemoryRoomSource::new(snapshot.clone())
+            .map_err(|_| DesktopRoomPersistenceError::InvalidFile)?;
+        Ok(snapshot.rooms.len())
+    }
 }
 
 impl RoomSource for DesktopRoomSource {

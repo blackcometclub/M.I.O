@@ -13,6 +13,9 @@ apps/desktop/src-tauri/gen/
 artifacts/
 logs/
 
+# Local Codex portrait references (not product or public-release assets)
+docs/visual-references/
+
 # Local configuration and secrets
 .env
 .env.*

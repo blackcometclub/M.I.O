@@ -199,6 +199,22 @@ pub(crate) struct DesktopRoomWorkspaces {
     persistence: Option<WorkspacePersistence>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct AvailableRoomWorkspace {
+    root: PathBuf,
+    identity_key: String,
+}
+
+impl AvailableRoomWorkspace {
+    pub(crate) fn root(&self) -> &Path {
+        &self.root
+    }
+
+    pub(crate) fn identity_key(&self) -> &str {
+        &self.identity_key
+    }
+}
+
 impl DesktopRoomWorkspaces {
     #[cfg(test)]
     pub(crate) fn in_memory() -> Arc<Self> {
@@ -258,10 +274,21 @@ impl DesktopRoomWorkspaces {
         &self,
         room_id: &str,
     ) -> Result<Option<PathBuf>, RoomWorkspaceError> {
+        Ok(self
+            .available_workspace(room_id)?
+            .map(|workspace| workspace.root))
+    }
+
+    pub(crate) fn available_workspace(
+        &self,
+        room_id: &str,
+    ) -> Result<Option<AvailableRoomWorkspace>, RoomWorkspaceError> {
         let Some(root) = self.configured_root(room_id)? else {
             return Ok(None);
         };
-        safe_workspace_root(&root).map(Some)
+        let root = safe_workspace_root(&root)?;
+        let identity_key = workspace_identity_key(&root)?;
+        Ok(Some(AvailableRoomWorkspace { root, identity_key }))
     }
 }
 
@@ -368,6 +395,54 @@ fn safe_workspace_root(root: &Path) -> Result<PathBuf, RoomWorkspaceError> {
         return Err(RoomWorkspaceError::UnsafeLink);
     }
     Ok(canonical)
+}
+
+#[cfg(windows)]
+fn workspace_identity_key(root: &Path) -> Result<String, RoomWorkspaceError> {
+    use std::os::windows::fs::OpenOptionsExt;
+    use std::os::windows::io::AsRawHandle;
+    use windows_sys::Win32::Storage::FileSystem::{
+        BY_HANDLE_FILE_INFORMATION, FILE_FLAG_BACKUP_SEMANTICS, GetFileInformationByHandle,
+    };
+
+    let handle = OpenOptions::new()
+        .read(true)
+        .custom_flags(FILE_FLAG_BACKUP_SEMANTICS)
+        .open(root)
+        .map_err(|_| RoomWorkspaceError::Unavailable)?;
+    let mut information = BY_HANDLE_FILE_INFORMATION::default();
+    if unsafe {
+        GetFileInformationByHandle(
+            handle.as_raw_handle().cast(),
+            std::ptr::addr_of_mut!(information),
+        )
+    } == 0
+    {
+        return Err(RoomWorkspaceError::Unavailable);
+    }
+    let file_index =
+        (u64::from(information.nFileIndexHigh) << 32) | u64::from(information.nFileIndexLow);
+    Ok(format!(
+        "windows-{:08x}-{file_index:016x}",
+        information.dwVolumeSerialNumber
+    ))
+}
+
+#[cfg(unix)]
+fn workspace_identity_key(root: &Path) -> Result<String, RoomWorkspaceError> {
+    use std::os::unix::fs::MetadataExt;
+
+    let metadata = fs::metadata(root).map_err(|_| RoomWorkspaceError::Unavailable)?;
+    Ok(format!(
+        "unix-{:016x}-{:016x}",
+        metadata.dev(),
+        metadata.ino()
+    ))
+}
+
+#[cfg(not(any(windows, unix)))]
+fn workspace_identity_key(_root: &Path) -> Result<String, RoomWorkspaceError> {
+    Err(RoomWorkspaceError::Unavailable)
 }
 
 #[cfg(windows)]
@@ -544,6 +619,49 @@ mod tests {
         let reloaded = DesktopRoomWorkspaces::persistent(settings_file).unwrap();
 
         assert_eq!(reloaded.available_root("moe-dev-room").unwrap(), None);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn reports_a_removed_bound_workspace_as_unavailable() {
+        let root = isolated_root("removed-root");
+        let workspace = root.join("workspace");
+        fs::create_dir(&workspace).unwrap();
+        let settings = DesktopRoomWorkspaces::in_memory();
+        settings.bind("moe-dev-room", workspace.clone()).unwrap();
+
+        fs::remove_dir(&workspace).unwrap();
+
+        assert_eq!(
+            settings.available_root("moe-dev-room"),
+            Err(RoomWorkspaceError::Unavailable)
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn changes_the_workspace_identity_when_the_folder_at_the_same_path_is_replaced() {
+        let root = isolated_root("replaced-identity");
+        let workspace = root.join("workspace");
+        let old_workspace = root.join("old-workspace");
+        fs::create_dir(&workspace).unwrap();
+        let settings = DesktopRoomWorkspaces::in_memory();
+        settings.bind("moe-dev-room", workspace.clone()).unwrap();
+
+        let first = settings
+            .available_workspace("moe-dev-room")
+            .unwrap()
+            .unwrap();
+        fs::rename(&workspace, &old_workspace).unwrap();
+        fs::create_dir(&workspace).unwrap();
+        let second = settings
+            .available_workspace("moe-dev-room")
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(first.root, second.root);
+        assert_ne!(first.identity_key, second.identity_key);
+        assert!(first.identity_key.is_ascii());
         fs::remove_dir_all(root).unwrap();
     }
 

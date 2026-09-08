@@ -145,6 +145,187 @@
   white-space: pre-wrap;
 }
 
+.message-image {
+  display: grid;
+  max-width: 520px;
+  margin: 10px 0 2px;
+  gap: 7px;
+}
+
+.message-image > a {
+  display: block;
+  overflow: hidden;
+  border: 1px solid rgb(119 83 31 / 18%);
+  border-radius: 10px;
+  background: #f6f0e6;
+}
+
+.message-image img {
+  display: block;
+  width: 100%;
+  max-height: 520px;
+  object-fit: contain;
+}
+
+.message-image figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.62em;
+}
+
+.message-image figcaption a,
+.message-image figcaption button {
+  padding: 5px 8px;
+  border: 1px solid #d7b56d;
+  border-radius: 7px;
+  color: #6d4b17;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  background: #fff8e6;
+  cursor: pointer;
+}
+
+.message-image figcaption button:disabled {
+  cursor: default;
+  opacity: 0.68;
+}
+
+.message-image figcaption span,
+.message-image-status {
+  color: #a14732;
+}
+
+.message-image-save-backdrop {
+  position: fixed;
+  z-index: 1300;
+  inset: 0;
+  display: grid;
+  padding: 24px;
+  place-items: center;
+  background: rgb(38 27 17 / 58%);
+  backdrop-filter: blur(3px);
+}
+
+.message-image-save-dialog {
+  width: min(460px, 100%);
+  padding: 20px;
+  border: 1px solid rgb(132 82 27 / 26%);
+  border-radius: 18px;
+  color: #3f3020;
+  background: #fffaf2;
+  box-shadow: 0 24px 70px rgb(26 16 7 / 35%);
+}
+
+.message-image-save-dialog > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.message-image-save-dialog h2 {
+  margin: 0;
+  font-size: 1.05em;
+}
+
+.message-image-save-dialog > header button {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: 1px solid #e4d5c1;
+  border-radius: 10px;
+  color: #6f5840;
+  font-size: 1.1em;
+  background: #fff;
+  cursor: pointer;
+}
+
+.message-image-save-dialog > p {
+  margin: 12px 0;
+  color: #705b42;
+  font-size: 0.72em;
+  line-height: 1.6;
+}
+
+.message-image-save-dialog > label {
+  display: grid;
+  gap: 6px;
+  color: #72542e;
+  font-size: 0.72em;
+  font-weight: 850;
+}
+
+.message-image-save-dialog input {
+  width: 100%;
+  padding: 10px 11px;
+  border: 1px solid #dcc79f;
+  border-radius: 10px;
+  color: #3f3020;
+  font: inherit;
+  background: #fff;
+}
+
+.message-image-save-dialog .message-image-save-error {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border-radius: 9px;
+  color: #962f25;
+  font-weight: 800;
+  background: #ffe8e2;
+}
+
+.message-image-save-dialog > footer {
+  display: flex;
+  margin-top: 18px;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.message-image-save-dialog > footer button {
+  min-width: 82px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid #d9c6ae;
+  border-radius: 10px;
+  color: #674f35;
+  font: inherit;
+  font-size: 0.72em;
+  font-weight: 900;
+  background: #fff;
+  cursor: pointer;
+}
+
+.message-image-save-dialog > footer button.is-primary {
+  border-color: #8d641d;
+  color: #fff;
+  background: #9d6c18;
+}
+
+.message-image-save-dialog button:disabled,
+.message-image-save-dialog input:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.message-image-save-dialog button:focus-visible,
+.message-image-save-dialog input:focus-visible {
+  outline: 3px solid rgb(166 105 15 / 30%);
+  outline-offset: 2px;
+}
+
+@media (max-width: 620px) {
+  .message-image-save-backdrop {
+    padding: 12px;
+  }
+
+  .message-image-save-dialog {
+    padding: 16px;
+  }
+}
+
 .message-bubble footer {
   display: flex;
   min-height: 16px;
@@ -176,18 +357,30 @@
 .typing-row {
   display: flex;
   width: fit-content;
-  padding: 7px 11px 7px 7px;
+  max-width: min(540px, 92%);
+  min-height: 42px;
+  padding: 8px 14px 8px 9px;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  border: 1px solid rgb(153 128 83 / 18%);
   border-radius: 999px;
-  color: #8d806e;
-  font-size: 0.62em;
-  background: rgb(255 255 255 / 70%);
+  color: #655744;
+  font-size: 0.82em;
+  font-weight: 700;
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 5px 14px rgb(76 53 23 / 10%);
+}
+
+.typing-row .avatar-small {
+  width: 30px;
+  height: 30px;
+  font-size: 0.64em;
 }
 
 .typing-row i {
-  width: 4px;
-  height: 4px;
+  flex: 0 0 auto;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: #a59278;
   animation: typing-pulse 900ms infinite alternate;
@@ -199,6 +392,10 @@
 
 .typing-row i:last-child {
   animation-delay: 360ms;
+}
+
+.typing-elapsed {
+  font-variant-numeric: tabular-nums;
 }
 
 @keyframes typing-pulse {

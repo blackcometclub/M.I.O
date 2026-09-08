@@ -15,6 +15,31 @@
   overflow-y: auto;
 }
 
+.room-settings-feedback {
+  position: sticky;
+  z-index: 3;
+  top: -16px;
+  display: grid;
+  margin: 8px -4px 0;
+  padding: 8px 4px 4px;
+  gap: 6px;
+  background: rgb(255 253 248 / 96%);
+  backdrop-filter: blur(8px);
+}
+
+.room-settings-feedback:empty {
+  display: none;
+}
+
+.room-settings-feedback > p {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid currentcolor;
+  border-radius: 9px;
+  background: #fffdf8;
+  overflow-wrap: anywhere;
+}
+
 .room-settings-field {
   display: grid;
   margin-top: 14px;
@@ -47,7 +72,8 @@
 .room-member-row button,
 .room-profile-row button,
 .room-danger-zone button,
-.room-workspace-actions button {
+.room-workspace-actions button,
+.room-backup-location-actions button {
   padding: 8px 10px;
   border: 1px solid #dfd2c1;
   border-radius: 9px;
@@ -105,7 +131,8 @@
 .room-member-row button:disabled,
 .room-profile-row button:disabled,
 .room-danger-zone button:disabled,
-.room-workspace-actions button:disabled {
+.room-workspace-actions button:disabled,
+.room-backup-location-actions button:disabled {
   cursor: not-allowed;
   opacity: 0.42;
 }
@@ -291,6 +318,72 @@
   background: #8c5b32;
 }
 
+.room-backup-location {
+  display: grid;
+  padding: 8px 9px;
+  gap: 4px;
+  border: 1px solid #dde6da;
+  border-radius: 9px;
+  background: #fbfef9;
+}
+
+.room-backup-location > span,
+.room-backup-location > small,
+.room-restore-preview > span,
+.room-restore-preview > small {
+  margin: 0;
+}
+
+.room-backup-location > span {
+  color: #69806c;
+  font-weight: 800;
+}
+
+.room-backup-location code,
+.room-restore-preview code {
+  color: #4b594c;
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 0.55rem;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.room-backup-location > small {
+  color: #a03d2f;
+  font-size: 0.55rem;
+}
+
+.room-backup-location-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.room-backup-location-actions button {
+  color: #4e6652;
+  border-color: #ccd9c9;
+  background: #f7fbf5;
+}
+
+.room-restore-preview {
+  display: grid;
+  padding: 9px;
+  gap: 4px;
+  border: 1px solid #d7c2ae;
+  border-radius: 9px;
+  background: #fff9f2;
+}
+
+.room-restore-preview strong {
+  color: #785239;
+}
+
+.room-restore-preview > span,
+.room-restore-preview > small {
+  color: #8f745e;
+  font-size: 0.56rem;
+}
+
 .room-danger-zone strong,
 .room-danger-zone span {
   display: block;
@@ -331,7 +424,6 @@
   color: #39704a;
   font-size: 0.62rem;
   font-weight: 800;
-  overflow-wrap: anywhere;
 }
 
 .room-settings-error {

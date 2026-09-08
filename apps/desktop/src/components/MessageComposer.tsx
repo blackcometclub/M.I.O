@@ -6,8 +6,13 @@ import {
   useState,
 } from "react";
 
-import type { Participant } from "../types";
-import type { ConductorSendMode } from "../types";
+import type {
+  ConductorSendMode,
+  ImageGenerationComposition,
+  ImageGenerationPreferences,
+  ImageGenerationQuality,
+  Participant,
+} from "../types";
 import { useUiPreferences } from "../uiPreferences";
 import { Avatar } from "./Avatar";
 
@@ -15,27 +20,65 @@ type MessageComposerProps = {
   dispatchSafetyWarning: string | null;
   conductor: Participant | null;
   hint: string;
+  isBackgroundTurn: boolean;
   isAvailable: boolean;
   isAwaitingReply: boolean;
+  isCancelling: boolean;
   isSending: boolean;
+  onCancel: () => Promise<boolean>;
   onDismissDispatchSafetyWarning: () => void;
+  onDismissSendError: () => void;
   onSendModeChange: (mode: ConductorSendMode) => Promise<boolean>;
   onRemoveRecipient: (participantId: string) => void;
-  onSend: (body: string) => Promise<boolean>;
+  onSend: (body: string, imageGeneration: ImageGenerationPreferences | null) => Promise<boolean>;
   recipients: Participant[];
   sendMode: ConductorSendMode;
   sendError: string | null;
   sendNotice: string | null;
 };
 
+const imageGenerationPreferencesStorageKey = "moe-image-generation-preferences-v2";
+const imageCompositions: ImageGenerationComposition[] = ["1:1", "4:3", "3:4", "16:9", "9:16"];
+const imageQualities: ImageGenerationQuality[] = ["auto", "low", "medium", "high"];
+
+const legacyImageCompositions: Record<string, ImageGenerationComposition> = {
+  auto: "1:1",
+  square: "1:1",
+  landscape: "4:3",
+  portrait: "3:4",
+};
+
+function normalizeImageComposition(value: unknown): ImageGenerationComposition {
+  if (imageCompositions.includes(value as ImageGenerationComposition)) {
+    return value as ImageGenerationComposition;
+  }
+  return typeof value === "string" ? legacyImageCompositions[value] ?? "1:1" : "1:1";
+}
+
+function loadImageGenerationPreferences(): ImageGenerationPreferences {
+  try {
+    const value = JSON.parse(localStorage.getItem(imageGenerationPreferencesStorageKey) ?? "null") as Partial<ImageGenerationPreferences> | null;
+    return {
+      composition: normalizeImageComposition(value?.composition),
+      quality: imageQualities.includes(value?.quality as ImageGenerationQuality) ? value!.quality! : "auto",
+    };
+  } catch {
+    return { composition: "1:1", quality: "auto" };
+  }
+}
+
 export function MessageComposer({
   dispatchSafetyWarning,
   conductor,
   hint,
+  isBackgroundTurn,
   isAvailable,
   isAwaitingReply,
+  isCancelling,
   isSending,
+  onCancel,
   onDismissDispatchSafetyWarning,
+  onDismissSendError,
   onSendModeChange,
   onRemoveRecipient,
   onSend,
@@ -46,6 +89,7 @@ export function MessageComposer({
 }: MessageComposerProps) {
   const { t } = useUiPreferences();
   const [draft, setDraft] = useState("");
+  const [imageGeneration, setImageGeneration] = useState(loadImageGenerationPreferences);
   const composerRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const shouldRestoreFocusRef = useRef(false);
@@ -57,6 +101,9 @@ export function MessageComposer({
     !isAwaitingReply;
   const visibleSafetyWarning = sendError ?? dispatchSafetyWarning;
   const statusText = sendNotice ?? hint;
+  const showBackgroundTurnHint = isBackgroundTurn && !sendNotice;
+  const canConfigureImageGeneration =
+    sendMode === "direct" && recipients.some((participant) => participant.id === "codex");
 
   async function submit(event?: FormEvent) {
     event?.preventDefault();
@@ -65,12 +112,20 @@ export function MessageComposer({
     }
 
     shouldRestoreFocusRef.current = true;
-    if (await onSend(draft.trim())) {
+    if (await onSend(draft.trim(), canConfigureImageGeneration ? imageGeneration : null)) {
       setDraft("");
     } else {
       shouldRestoreFocusRef.current = false;
     }
   }
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(imageGenerationPreferencesStorageKey, JSON.stringify(imageGeneration));
+    } catch {
+      // The current selection still works for this session when storage is unavailable.
+    }
+  }, [imageGeneration]);
 
   useEffect(() => {
     if (isSending || isAwaitingReply || !shouldRestoreFocusRef.current) {
@@ -154,18 +209,75 @@ export function MessageComposer({
           role={sendError ? "alert" : "status"}
         >
           <span>{visibleSafetyWarning}</span>
-          {sendError ? null : (
-            <button onClick={onDismissDispatchSafetyWarning} type="button">
-              {t("dismissSafetyWarning")}
-            </button>
-          )}
+          <button
+            onClick={sendError ? onDismissSendError : onDismissDispatchSafetyWarning}
+            type="button"
+          >
+            {sendError ? t("close") : t("dismissSafetyWarning")}
+          </button>
         </div>
+      ) : null}
+
+      {canConfigureImageGeneration ? (
+        <details className="composer-image-settings">
+          <summary>{t("imageGenerationSettings")}</summary>
+          <div>
+            <fieldset className="composer-aspect-ratio-fieldset">
+              <legend>{t("imageGenerationComposition")}</legend>
+              <div
+                aria-label={t("imageGenerationComposition")}
+                className="composer-aspect-ratio-options"
+                role="radiogroup"
+              >
+                {imageCompositions.map((composition) => {
+                  const label = composition === "1:1"
+                    ? t("imageAspectSquare")
+                    : t("imageAspectRatio", { ratio: composition });
+                  return (
+                    <button
+                      aria-checked={imageGeneration.composition === composition}
+                      aria-label={label}
+                      className={imageGeneration.composition === composition ? "is-active" : ""}
+                      data-ratio={composition}
+                      disabled={isSending || isAwaitingReply}
+                      key={composition}
+                      onClick={() => setImageGeneration((current) => ({ ...current, composition }))}
+                      role="radio"
+                      title={label}
+                      type="button"
+                    >
+                      <span aria-hidden="true" className="composer-aspect-ratio-glyph" />
+                      <span>{composition}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+            <label>
+              <span>{t("imageGenerationQuality")}</span>
+              <select
+                disabled={isSending || isAwaitingReply}
+                onChange={(event) => setImageGeneration((current) => ({
+                  ...current,
+                  quality: event.target.value as ImageGenerationQuality,
+                }))}
+                value={imageGeneration.quality}
+              >
+                <option value="auto">{t("imageQualityAuto")}</option>
+                <option value="low">{t("imageQualityLow")}</option>
+                <option value="medium">{t("imageQualityMedium")}</option>
+                <option value="high">{t("imageQualityHigh")}</option>
+              </select>
+            </label>
+            <p>{t("imageGenerationSettingsHelp")}</p>
+          </div>
+        </details>
       ) : null}
 
       <div className="composer-input-row">
         <textarea
           aria-label={t("message")}
-          disabled={isSending || isAwaitingReply}
+          disabled={isSending}
           maxLength={1000}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={handleKeyDown}
@@ -174,13 +286,19 @@ export function MessageComposer({
           rows={2}
           value={draft}
         />
-        <button disabled={!canSend} type="submit">
-          <span>{isSending ? t("saving") : isAwaitingReply ? t("waiting") : t("send")}</span>
-          <span aria-hidden="true">↑</span>
+        <button
+          aria-label={isAwaitingReply ? t("stop") : t("send")}
+          className={isAwaitingReply ? "is-stop" : undefined}
+          disabled={isAwaitingReply ? isCancelling : !canSend}
+          onClick={isAwaitingReply ? () => void onCancel() : undefined}
+          type={isAwaitingReply ? "button" : "submit"}
+        >
+          <span>{isSending ? t("saving") : isCancelling ? t("stopping") : isAwaitingReply ? t("stop") : t("send")}</span>
+          <span aria-hidden="true">{isAwaitingReply ? "■" : "↑"}</span>
         </button>
       </div>
       <span
-        className={`composer-hint ${sendNotice ? "is-notice" : ""}`}
+        className={`composer-hint ${sendNotice ? "is-notice" : ""} ${showBackgroundTurnHint ? "is-background-turn" : ""}`}
         role="status"
       >
         {statusText}

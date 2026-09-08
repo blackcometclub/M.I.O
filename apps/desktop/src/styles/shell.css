@@ -7,6 +7,10 @@
   background: transparent;
 }
 
+.moe-window.is-image-free {
+  --surface-image: none !important;
+}
+
 .moe-workbench {
   --workbench-gap: clamp(16px, 2vw, 25px);
   --workbench-sidebar-width: var(--moe-sidebar-width);
@@ -20,6 +24,16 @@
   gap: var(--workbench-gap);
   background: transparent;
   isolation: isolate;
+}
+
+.moe-workbench.is-sidebar-collapsed {
+  --workbench-gap: 0px;
+  --workbench-sidebar-width: 0px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.moe-workbench.is-sidebar-collapsed .room-workspace {
+  grid-column: 1;
 }
 
 .room-sidebar,
@@ -164,6 +178,108 @@
   box-shadow: inset 3px 0 #d07a12;
 }
 
+.room-list-item.is-processing:not([aria-current="page"]) {
+  color: #4c2f07;
+  background: #ffe9b2;
+  box-shadow:
+    inset 3px 0 #b96500,
+    inset 0 0 0 1px rgb(185 101 0 / 18%);
+}
+
+.room-list-item.is-processing .room-list-copy strong {
+  color: #4c2f07;
+}
+
+.room-list-item.is-processing .room-list-copy > span:last-child {
+  color: #704300;
+  font-weight: 800;
+}
+
+.room-context-menu {
+  position: fixed;
+  z-index: 80;
+  display: grid;
+  width: 196px;
+  padding: 7px;
+  gap: 3px;
+  border: 1px solid rgb(111 75 25 / 24%);
+  border-radius: 12px;
+  color: #4c3928;
+  background: #fffaf1;
+  box-shadow: 0 14px 34px rgb(42 29 14 / 24%);
+}
+
+.message-context-menu {
+  width: 224px;
+}
+
+.message-context-menu > button {
+  white-space: nowrap;
+}
+
+.room-context-menu-title {
+  overflow: hidden;
+  padding: 6px 8px 7px;
+  color: #77644f;
+  font-size: 0.66em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-context-menu > button,
+.room-context-delete-confirm button {
+  min-height: 32px;
+  padding: 6px 9px;
+  text-align: left;
+  border: 0;
+  border-radius: 8px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.room-context-menu button:hover:not(:disabled),
+.room-context-menu button:focus-visible {
+  background: #f3e8d8;
+  outline: none;
+}
+
+.room-context-menu button.is-danger {
+  color: #a33c2d;
+}
+
+.room-context-menu button:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.room-context-menu-help {
+  padding: 4px 8px 6px;
+  color: #9a8975;
+  font-size: 0.58em;
+  line-height: 1.35;
+}
+
+.room-context-delete-confirm {
+  display: grid;
+  padding: 5px 7px 3px;
+  gap: 8px;
+  color: #725142;
+  font-size: 0.66em;
+  line-height: 1.4;
+}
+
+.room-context-delete-confirm > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.room-context-menu-error {
+  color: #a33c2d;
+  font-size: 0.92em;
+}
+
 .room-list-icon {
   display: grid;
   flex: 0 0 auto;
@@ -179,6 +295,7 @@
 
 .room-list-copy {
   display: block;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -190,6 +307,31 @@
   white-space: nowrap;
 }
 
+.room-list-copy .room-list-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.room-list-title strong {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-processing-spinner {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  border: 2px solid #dfb66e;
+  border-top-color: #8f4e00;
+  border-radius: 50%;
+  animation: room-processing-spin 850ms linear infinite;
+}
+
 .room-list-copy strong {
   font-size: 0.78em;
 }
@@ -198,6 +340,17 @@
   margin-top: 3px;
   color: #998c79;
   font-size: 0.63em;
+}
+
+.room-list-copy .room-list-title,
+.room-list-copy .room-processing-spinner {
+  margin-top: 0;
+}
+
+@keyframes room-processing-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .sidebar-footer {
@@ -245,6 +398,10 @@
     0 30px 72px rgb(34 24 11 / 34%),
     0 9px 20px rgb(34 24 11 / 18%),
     inset 0 1px rgb(255 255 255 / 52%);
+}
+
+.moe-window.is-image-free .room-workspace {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .sidebar-resize-handle {
@@ -314,6 +471,7 @@
 
 .brand-lockup {
   display: flex;
+  flex: 0 0 auto;
   margin-left: auto;
   flex-direction: column;
   align-items: flex-end;
@@ -322,7 +480,7 @@
 }
 
 .brand-lockup img {
-  width: clamp(6rem, 9.5vw, 8.5rem);
+  width: 8.5rem;
   height: auto;
   pointer-events: none;
 }
@@ -337,6 +495,27 @@
 .appearance-button {
   color: #934b11;
   background: rgb(255 248 225 / 72%);
+}
+
+.sidebar-toggle-button,
+.image-mode-button {
+  color: #76572e;
+  background: rgb(255 248 225 / 72%);
+}
+
+.sidebar-toggle-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.image-mode-button.is-active {
+  color: white;
+  background: #8d5d2c;
 }
 
 .window-controls {

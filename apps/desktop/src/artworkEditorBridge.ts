@@ -107,6 +107,14 @@ export async function openArtworkEditor(
           fail(new Error(`画像調整画面を開けませんでした: ${String(event.payload)}`));
         }),
       );
+      unlisteners.push(
+        await editor.once("tauri://destroyed", () => {
+          // The editor normally sends apply/cancel before closing. Treat an
+          // unexpected close or renderer failure as cancel so the caller can
+          // never remain stuck waiting for a result that will not arrive.
+          finish(null);
+        }),
+      );
     })().catch(fail);
   });
 }

@@ -31,6 +31,7 @@ export type ParticipantProfile = {
   avatar: ({ dataUrl: string } & AvatarPlacement) | null;
   aiInstructions: string;
   aiAccessMode: AiAccessMode;
+  aiModel: string;
 };
 
 export type ChatMessage = {
@@ -41,6 +42,7 @@ export type ChatMessage = {
   sentAt: string;
   isDemo?: boolean;
   provenance?: "codexOwnerProxy";
+  artifactIds?: string[];
 };
 
 export type Room = {
@@ -75,7 +77,44 @@ export type RoomWorkspaceStatus = {
   available: boolean;
 };
 
+export type RoomBackupStatus = {
+  directoryPath: string;
+  isCustom: boolean;
+  available: boolean;
+};
+
+export type RoomBackupPreview = {
+  fileName: string;
+  roomCount: number;
+  createdAtUnixMs: number;
+};
+
 export type ConductorSendMode = "direct" | "conductor";
+
+export type ImageGenerationComposition = "1:1" | "4:3" | "3:4" | "16:9" | "9:16";
+
+export type ImageGenerationQuality = "auto" | "low" | "medium" | "high";
+
+export type ImageGenerationPreferences = {
+  composition: ImageGenerationComposition;
+  quality: ImageGenerationQuality;
+};
+
+export type CodexTurnProgressPhase =
+  | "preparing"
+  | "thinking"
+  | "reconnecting"
+  | "workspace"
+  | "tool"
+  | "generatingImage"
+  | "writingResponse";
+
+export type CodexTurnProgress = {
+  roomId: string;
+  dispatchId: string;
+  phase: CodexTurnProgressPhase;
+  startedAt: number;
+};
 
 export type RoomConductorStatus = {
   roomId: string;

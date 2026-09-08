@@ -14,6 +14,12 @@ type ParticipantProfileEditorProps = {
 
 const maximumAvatarBytes = 5 * 1024 * 1024;
 
+const verifiedModels: Record<string, string[]> = {
+  codex: ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"],
+  "claude-code": ["claude-fable-5", "claude-opus-5", "claude-sonnet-5"],
+  grok: ["grok-4.6"],
+};
+
 function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(maximum, Math.max(minimum, value));
 }
@@ -55,13 +61,20 @@ export function ParticipantProfileEditor({
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setSaving] = useState(false);
   const [aiInstructions, setAiInstructions] = useState(profile?.aiInstructions ?? "");
-  const supportsWorkspaceAccess = false;
+  const [aiModel, setAiModel] = useState(profile?.aiModel ?? "providerDefault");
+  const supportsWorkspaceRead = participant.id === "codex" || participant.id === "grok";
+  const supportsWorkspaceWrite = participant.id === "codex";
+  const workspaceReadDetail = participant.id === "grok"
+    ? "permissionGrokWorkspaceReadDetail"
+    : "permissionWorkspaceReadDetail";
   const [aiAccessMode, setAiAccessMode] = useState<AiAccessMode>(() => {
-    if (!supportsWorkspaceAccess) return "chatOnly";
+    if (!supportsWorkspaceRead) return "chatOnly";
+    if (profile?.aiAccessMode === "workspaceWrite" && !supportsWorkspaceWrite) return "chatOnly";
     if (profile?.aiAccessMode && profile.aiAccessMode !== "providerDefault") return profile.aiAccessMode;
     return "chatOnly";
   });
   const workspaceSelected = roomWorkspace.mode === "workspace" && roomWorkspace.available;
+  const supportsBoundedCommands = participant.id === "codex" && aiAccessMode === "workspaceWrite";
 
   const previewParticipant: Participant = {
     ...participant,
@@ -130,14 +143,22 @@ export function ParticipantProfileEditor({
     if (!trimmedName) return;
     setSaving(true);
     setError(null);
-    const saved = await onSave({
-      participantId: participant.id,
-      displayName: trimmedName,
-      avatar: dataUrl ? { dataUrl, scale, x, y } : null,
-      aiInstructions: participant.kind === "ai" ? aiInstructions.trim() : "",
-      aiAccessMode: participant.kind === "ai" ? aiAccessMode : "providerDefault",
-    });
-    setSaving(false);
+    let saved = false;
+    try {
+      saved = await onSave({
+        participantId: participant.id,
+        displayName: trimmedName,
+        avatar: dataUrl ? { dataUrl, scale, x, y } : null,
+        aiInstructions: participant.kind === "ai" ? aiInstructions.trim() : "",
+        aiAccessMode: participant.kind === "ai" ? aiAccessMode : "providerDefault",
+        aiModel: participant.kind === "ai" ? aiModel : "providerDefault",
+      });
+    } catch {
+      setError(t("profileSaveFailed"));
+      return;
+    } finally {
+      setSaving(false);
+    }
     if (saved) onClose();
     else setError(t("profileSaveFailed"));
   }
@@ -197,13 +218,29 @@ export function ParticipantProfileEditor({
               <output>{aiInstructions.length} / 2000</output>
             </label>
 
+            <label className="profile-model-field">
+              <span>{t("aiModel")}</span>
+              <small>{t("aiModelHelp")}</small>
+              <select
+                disabled={isSaving}
+                onChange={(event) => setAiModel(event.target.value)}
+                value={aiModel}
+              >
+                <option value="providerDefault">{t("providerDefaultModel")}</option>
+                {(verifiedModels[participant.id] ?? []).map((model) => (
+                  <option key={model} value={model}>{model}</option>
+                ))}
+              </select>
+              <em>{t("modelContractNote")}</em>
+            </label>
+
             <fieldset className="profile-permissions-field">
               <legend>{t("aiPermissions")}</legend>
               <p>{t("aiPermissionsHelp")}</p>
               {([
                 ["chatOnly", "permissionChatOnly", "permissionChatOnlyDetail", true],
-                ["workspaceRead", "permissionWorkspaceRead", "permissionWorkspaceReadDetail", supportsWorkspaceAccess],
-                ["workspaceWrite", "permissionWorkspaceWrite", "permissionWorkspaceWriteDetail", supportsWorkspaceAccess],
+                ["workspaceRead", "permissionWorkspaceRead", workspaceReadDetail, supportsWorkspaceRead],
+                ["workspaceWrite", "permissionWorkspaceWrite", "permissionWorkspaceWriteDetail", supportsWorkspaceWrite],
               ] as const).map(([mode, title, detail, supported]) => (
                 <label className={!supported ? "is-disabled" : undefined} key={mode}>
                   <input
@@ -221,7 +258,18 @@ export function ParticipantProfileEditor({
                 </label>
               ))}
               <div className="profile-permission-summary">
-                <span>{t("permissionCommands")}: <strong>{aiAccessMode === "chatOnly" ? t("permissionOff") : t("permissionLocalOnly")}</strong></span>
+                <span>
+                  {t("permissionFiles")}: <strong>{
+                    aiAccessMode === "workspaceRead"
+                      ? t("permissionReadOnly")
+                      : aiAccessMode === "workspaceWrite"
+                        ? t("permissionReadWrite")
+                        : t("permissionOff")
+                  }</strong>
+                </span>
+                <span>{t("permissionCommands")}: <strong>{
+                  t(supportsBoundedCommands ? "permissionBoundedCommands" : "permissionOff")
+                }</strong></span>
                 <span>{t("permissionWeb")}: <strong>{t("permissionOff")}</strong></span>
               </div>
               {aiAccessMode !== "chatOnly" && !workspaceSelected ? (

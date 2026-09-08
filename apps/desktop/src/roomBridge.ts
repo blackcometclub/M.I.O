@@ -4,9 +4,12 @@ import { demoParticipants, ownerParticipantId } from "./mockData";
 import type {
   AiConnectionMap,
   AiConnectionState,
+  ImageGenerationPreferences,
   Participant,
   ParticipantMap,
   Room,
+  RoomBackupPreview,
+  RoomBackupStatus,
   RoomConductorStatus,
   RoomWorkspaceStatus,
 } from "./types";
@@ -56,6 +59,20 @@ type BackendRoomBackupSuccess = {
   ok: true;
   fileName: string;
   roomCount: number;
+};
+
+type BackendRoomBackupStatus = {
+  ok: true;
+  directoryPath: string;
+  isCustom: boolean;
+  available: boolean;
+};
+
+type BackendRoomBackupPreview = {
+  ok: true;
+  fileName: string;
+  roomCount: number;
+  createdAtUnixMs: number;
 };
 
 export type RoomContextReport = {
@@ -129,6 +146,14 @@ type BackendRoomWorkspaceStatus = {
   changed: boolean;
 };
 
+export type RoomImageArtifact = {
+  id: string;
+  mediaType: "image/png" | "image/jpeg" | "image/webp";
+  fileName: string;
+  byteLength: number;
+  dataUrl: string;
+};
+
 type BackendRoomConductorStatus = {
   ok: true;
   roomId: string;
@@ -141,6 +166,11 @@ type BackendRoomOrchestrationResult = {
   operationId: string;
   status: "completed" | "duplicate" | "failed" | "unknown";
   finalMessage: BackendMessage | null;
+};
+
+type BackendRoomTurnCancellationSuccess = {
+  ok: true;
+  cancelledTurns: number;
 };
 
 export type DesktopRoomHydration = {
@@ -225,6 +255,17 @@ function isBackendRoomOrchestrationResult(
     (value.finalMessage === null || isBackendMessage(value.finalMessage)) &&
     (value.ok === (value.status === "completed" || value.status === "duplicate")) &&
     (value.ok ? value.finalMessage !== null : value.finalMessage === null)
+  );
+}
+
+function isBackendRoomTurnCancellationSuccess(
+  value: unknown,
+): value is BackendRoomTurnCancellationSuccess {
+  return (
+    isRecord(value) &&
+    value.ok === true &&
+    Number.isSafeInteger(value.cancelledTurns) &&
+    Number(value.cancelledTurns) >= 0
   );
 }
 
@@ -318,6 +359,51 @@ function isBackendRoomBackupSuccess(value: unknown): value is BackendRoomBackupS
   );
 }
 
+function isBackendRoomBackupStatus(value: unknown): value is BackendRoomBackupStatus {
+  return (
+    isRecord(value) &&
+    value.ok === true &&
+    typeof value.directoryPath === "string" &&
+    value.directoryPath.length > 0 &&
+    value.directoryPath.length <= 32_768 &&
+    !/[\u0000-\u001f]/u.test(value.directoryPath) &&
+    typeof value.isCustom === "boolean" &&
+    typeof value.available === "boolean"
+  );
+}
+
+function isBackendRoomBackupPreview(value: unknown): value is BackendRoomBackupPreview {
+  return (
+    isRecord(value) &&
+    value.ok === true &&
+    typeof value.fileName === "string" &&
+    /^moe-room-backup-\d{20}\.json$/.test(value.fileName) &&
+    Number.isSafeInteger(value.roomCount) &&
+    Number(value.roomCount) > 0 &&
+    Number.isSafeInteger(value.createdAtUnixMs) &&
+    Number(value.createdAtUnixMs) >= 0
+  );
+}
+
+export function desktopRoomBackupStatusView(value: unknown): RoomBackupStatus {
+  if (!isBackendRoomBackupStatus(value)) {
+    throw new Error("Desktop Room backup status payload was not valid.");
+  }
+  return {
+    directoryPath: value.directoryPath,
+    isCustom: value.isCustom,
+    available: value.available,
+  };
+}
+
+function backupPreviewView(value: BackendRoomBackupPreview): RoomBackupPreview {
+  return {
+    fileName: value.fileName,
+    roomCount: value.roomCount,
+    createdAtUnixMs: value.createdAtUnixMs,
+  };
+}
+
 function participantView(participant: BackendParticipant): Participant {
   const known = demoParticipants[participant.id];
   const generatedBadge = Array.from(participant.displayName)
@@ -361,6 +447,7 @@ function messageView(message: BackendMessage, participants: ParticipantMap) {
     targetIds: message.recipients,
     sentAt: displayTime(message.createdAt),
     ...(message.provenance ? { provenance: message.provenance } : {}),
+    ...(message.artifactIds.length > 0 ? { artifactIds: message.artifactIds } : {}),
     isDemo:
       participants[message.authorId]?.kind === "ai" && message.id.startsWith("welcome-"),
   };
@@ -762,10 +849,56 @@ export async function backupDesktopRooms() {
   return value;
 }
 
-export async function restoreLatestDesktopRoomBackup() {
-  const value = await invoke<unknown>("desktop_room_restore_latest_backup");
+export async function readDesktopRoomBackupStatus() {
+  const value = await invoke<unknown>("desktop_room_backup_status");
+  if (!isBackendRoomBackupStatus(value)) {
+    throw new Error("Desktop Room backup status response was not valid.");
+  }
+  return desktopRoomBackupStatusView(value);
+}
+
+export async function chooseDesktopRoomBackupDirectory() {
+  const value = await invoke<unknown>("desktop_room_backup_choose_directory");
+  if (!isBackendRoomBackupStatus(value)) {
+    throw new Error("Desktop Room backup directory response was not valid.");
+  }
+  return desktopRoomBackupStatusView(value);
+}
+
+export async function useDefaultDesktopRoomBackupDirectory() {
+  const value = await invoke<unknown>("desktop_room_backup_use_default_directory");
+  if (!isBackendRoomBackupStatus(value) || value.isCustom) {
+    throw new Error("Desktop Room default backup directory response was not valid.");
+  }
+  return desktopRoomBackupStatusView(value);
+}
+
+export async function openDesktopRoomBackupDirectory() {
+  const value = await invoke<unknown>("desktop_room_backup_open_directory");
+  if (!isBackendRoomBackupStatus(value) || !value.available) {
+    throw new Error("Desktop Room backup directory open response was not valid.");
+  }
+  return desktopRoomBackupStatusView(value);
+}
+
+export async function previewLatestDesktopRoomBackup() {
+  const value = await invoke<unknown>("desktop_room_backup_preview_latest");
+  if (!isBackendRoomBackupPreview(value)) {
+    throw new Error("Desktop Room backup preview response was not valid.");
+  }
+  return backupPreviewView(value);
+}
+
+export async function restoreDesktopRoomBackup(fileName: string) {
+  if (!/^moe-room-backup-\d{20}\.json$/.test(fileName)) {
+    throw new Error("Desktop Room backup file name was not valid.");
+  }
+  const value = await invoke<unknown>("desktop_room_restore_backup", { fileName });
   if (!isBackendRoomBackupSuccess(value)) {
     throw new Error("Desktop Room restore response was not valid.");
+  }
+  if (value.fileName !== fileName) {
+    throw new Error("Desktop Room restore response did not match the confirmed backup.");
   }
   return value;
 }
@@ -841,8 +974,7 @@ function desktopRoomDispatchView(
       message.authorId !== result.recipientId ||
       message.recipients.length !== 1 ||
       message.recipients[0] !== ownerParticipantId ||
-      message.body.trim().length === 0 ||
-      message.artifactIds.length !== 0
+      (message.body.trim().length === 0 && message.artifactIds.length === 0)
     ) {
       throw new Error("AI dispatch message did not match the Room contract.");
     }
@@ -877,6 +1009,50 @@ function desktopRoomDispatchView(
   };
 }
 
+export async function readDesktopRoomImageArtifact(input: {
+  roomId: string;
+  messageId: string;
+  artifactId: string;
+}): Promise<RoomImageArtifact> {
+  const value = await invoke<unknown>("desktop_room_artifact_read", input);
+  if (
+    !isRecord(value) ||
+    value.ok !== true ||
+    value.id !== input.artifactId ||
+    !["image/png", "image/jpeg", "image/webp"].includes(String(value.mediaType)) ||
+    typeof value.fileName !== "string" ||
+    !Number.isSafeInteger(value.byteLength) ||
+    Number(value.byteLength) <= 0 ||
+    typeof value.dataBase64 !== "string"
+  ) {
+    throw new Error("Desktop Room image response was not valid.");
+  }
+  return {
+    id: value.id as string,
+    mediaType: value.mediaType as RoomImageArtifact["mediaType"],
+    fileName: value.fileName,
+    byteLength: Number(value.byteLength),
+    dataUrl: `data:${value.mediaType};base64,${value.dataBase64}`,
+  };
+}
+
+export async function saveDesktopRoomImageArtifactToWorkspace(input: {
+  roomId: string;
+  messageId: string;
+  artifactId: string;
+  relativePath: string;
+}) {
+  const value = await invoke<unknown>("desktop_room_artifact_save_to_workspace", input);
+  if (
+    !isRecord(value) ||
+    value.ok !== true ||
+    value.relativePath !== input.relativePath
+  ) {
+    throw new Error("Desktop Room image save response was not valid.");
+  }
+  return value.relativePath as string;
+}
+
 export async function dispatchDesktopRoomMessage(input: DesktopRoomDispatchInput) {
   const value = await invoke<unknown>("desktop_room_dispatch_message", {
     roomId: input.roomId,
@@ -889,6 +1065,7 @@ export async function dispatchDesktopRoomMessage(input: DesktopRoomDispatchInput
 }
 
 export async function dispatchDesktopRoomRecipient(input: {
+  imageGeneration: ImageGenerationPreferences | null;
   messageId: string;
   participantId: string;
   participants: ParticipantMap;
@@ -898,6 +1075,7 @@ export async function dispatchDesktopRoomRecipient(input: {
     roomId: input.roomId,
     messageId: input.messageId,
     recipientId: input.participantId,
+    imageGeneration: input.imageGeneration,
   });
   if (!isBackendRoomDispatchSuccess(value)) {
     throw new Error("Desktop Room recipient dispatch response was not valid.");
@@ -938,6 +1116,17 @@ export async function orchestrateDesktopRoomMessage(input: {
     status: value.status,
     message: messageView(value.finalMessage, input.participants),
   } as const;
+}
+
+export async function cancelDesktopRoomTurn(roomId: string, messageId: string) {
+  const value = await invoke<unknown>("desktop_room_cancel_turn", {
+    roomId,
+    messageId,
+  });
+  if (!isBackendRoomTurnCancellationSuccess(value)) {
+    throw new Error("Desktop Room stop response was not valid.");
+  }
+  return value.cancelledTurns > 0;
 }
 
 export async function resetDesktopRoomAiContinuity(

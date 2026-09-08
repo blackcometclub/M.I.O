@@ -7,6 +7,7 @@ type ParticipantBarProps = {
   availableParticipants: Participant[];
   conductorId: string | null;
   connections: AiConnectionMap;
+  isLocked: boolean;
   isMenuOpen: boolean;
   onAddParticipant: (participantId: string) => void;
   onMenuClose: () => void;
@@ -21,6 +22,7 @@ export function ParticipantBar({
   availableParticipants,
   conductorId,
   connections,
+  isLocked,
   isMenuOpen,
   onAddParticipant,
   onMenuClose,
@@ -85,6 +87,7 @@ export function ParticipantBar({
             <button
               aria-expanded={isMenuOpen}
               className="participant-add-button"
+              disabled={isLocked}
               onClick={onMenuToggle}
               ref={addButtonRef}
               type="button"
@@ -105,7 +108,7 @@ export function ParticipantBar({
                     const isUnsupported = connection?.state === "unsupported";
                     return (
                       <button
-                        disabled={isUnsupported}
+                        disabled={isUnsupported || isLocked}
                         key={participant.id}
                         onClick={() => onAddParticipant(participant.id)}
                         role="menuitem"
@@ -161,7 +164,7 @@ export function ParticipantBar({
             <button
               aria-pressed={isSelected}
               className={`participant-button ${isSelected ? "is-selected" : ""}`}
-              disabled={recipientSelectionLocked}
+              disabled={recipientSelectionLocked || isLocked}
               key={participant.id}
               onClick={() => onToggleRecipient(participant.id)}
               title={`${participant.displayName} · ${locale === "en" ? connectionLabel : connection?.detail ?? t("checkingDetail")}`}

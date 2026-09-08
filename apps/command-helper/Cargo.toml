@@ -1,0 +1,26 @@
+[package]
+name = "moe-command-helper"
+autobins = false
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+
+[[bin]]
+name = "mio-command-helper"
+path = "src/main.rs"
+
+[dependencies]
+moe-command-helper-protocol = { path = "../../crates/moe-command-helper-protocol" }
+moe-windows-command-runner = { path = "../../crates/moe-windows-command-runner" }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61.2", features = [
+  "Win32_Foundation",
+  "Win32_Storage_FileSystem",
+  "Win32_System_Console",
+] }
+
+[dev-dependencies]
+moe-command-broker = { path = "../../crates/moe-command-broker" }

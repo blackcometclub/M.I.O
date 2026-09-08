@@ -1,9 +1,14 @@
 [package]
 name = "moe-desktop"
+autobins = false
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
+
+[[bin]]
+name = "mio-desktop"
+path = "src/main.rs"
 
 [lib]
 name = "moe_desktop_lib"
@@ -14,17 +19,24 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 axum = "0.8"
+base64 = "0.22.1"
 fontdb = "0.24.0"
 moe-adapter-sdk = { path = "../../../crates/moe-adapter-sdk" }
+moe-command-broker = { path = "../../../crates/moe-command-broker" }
+moe-command-helper-protocol = { path = "../../../crates/moe-command-helper-protocol" }
+moe-windows-command-launcher = { path = "../../../crates/moe-windows-command-launcher" }
 moe-core = { path = "../../../crates/moe-core" }
 moe-credential-store = { path = "../../../crates/moe-credential-store" }
+moe-git-status-broker = { path = "../../../crates/moe-git-status-broker" }
 moe-mcp = { path = "../../../crates/moe-mcp" }
 moe-relay-client = { path = "../../../crates/moe-relay-client" }
 moe-relay-transport = { path = "../../../crates/moe-relay-transport" }
 moe-protocol = { path = "../../../crates/moe-protocol" }
+moe-workspace-broker = { path = "../../../crates/moe-workspace-broker" }
 rmcp = { version = "3.1.2", default-features = false, features = ["server", "transport-streamable-http-server"] }
 serde.workspace = true
 serde_json.workspace = true
+sha2 = "0.10.9"
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2.7.2"
 tokio = { version = "1", features = ["net", "rt", "sync"] }
@@ -33,7 +45,20 @@ tokio-util = "0.7"
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-single-instance = "2.4.3"
 
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61.2", features = [
+  "Win32_Foundation",
+  "Win32_Security",
+  "Win32_Security_Authorization",
+  "Win32_Storage_FileSystem",
+  "Win32_System_JobObjects",
+  "Win32_System_Threading",
+  "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging",
+] }
+
 [dev-dependencies]
+git2 = { version = "0.21.0", default-features = false }
 moe-relay-transport = { path = "../../../crates/moe-relay-transport", features = ["test-root-certificate"] }
 rcgen = { version = "0.14.9", default-features = false, features = ["crypto", "ring"] }
 rustls = { version = "0.23.43", default-features = false, features = ["ring", "std", "tls12"] }

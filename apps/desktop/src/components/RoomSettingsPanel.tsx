@@ -1,10 +1,13 @@
 import { type Ref, useEffect, useMemo, useState } from "react";
+import { isBundledRoom } from "../roomPolicies";
 import { useUiPreferences } from "../uiPreferences";
 import { Avatar } from "./Avatar";
 
 import type {
   ParticipantMap,
   Room,
+  RoomBackupPreview,
+  RoomBackupStatus,
   RoomConductorStatus,
   RoomWorkspaceStatus,
 } from "../types";
@@ -13,56 +16,64 @@ type RoomSettingsPanelProps = {
   dataMessage: string | null;
   error: string | null;
   isBusy: boolean;
+  backupStatus: RoomBackupStatus;
   onBackup: () => Promise<boolean>;
+  onChooseBackupDirectory: () => Promise<boolean>;
   onChooseWorkspace: () => Promise<boolean>;
   onClearWorkspace: () => Promise<boolean>;
   onClose: () => void;
   onConfigureConductor: (participantId: string | null) => Promise<boolean>;
   onDelete: () => Promise<boolean>;
   onEditParticipantProfile: (participantId: string) => void;
+  onOpenBackupDirectory: () => Promise<boolean>;
+  onPreviewLatestBackup: () => Promise<boolean>;
   onRemoveParticipant: (participantId: string) => Promise<boolean>;
   onResetAiContinuity: (participantId: string) => Promise<boolean>;
   onRename: (name: string) => Promise<boolean>;
-  onRestoreLatest: () => Promise<boolean>;
+  onRestorePreviewedBackup: () => Promise<boolean>;
+  onUseDefaultBackupDirectory: () => Promise<boolean>;
   participants: ParticipantMap;
   panelRef: Ref<HTMLElement>;
   room: Room;
+  restorePreview: RoomBackupPreview | null;
   roomConductor: RoomConductorStatus;
   workspace: RoomWorkspaceStatus;
 };
-
-const bundledRoomIds = new Set(["moe-dev-room", "comparison-room", "mcp-lab"]);
 
 export function RoomSettingsPanel({
   dataMessage,
   error,
   isBusy,
+  backupStatus,
   onBackup,
+  onChooseBackupDirectory,
   onChooseWorkspace,
   onClearWorkspace,
   onClose,
   onConfigureConductor,
   onDelete,
   onEditParticipantProfile,
+  onOpenBackupDirectory,
+  onPreviewLatestBackup,
   onRemoveParticipant,
   onResetAiContinuity,
   onRename,
-  onRestoreLatest,
+  onRestorePreviewedBackup,
+  onUseDefaultBackupDirectory,
   participants,
   panelRef,
   room,
+  restorePreview,
   roomConductor,
   workspace,
 }: RoomSettingsPanelProps) {
   const { t } = useUiPreferences();
   const [name, setName] = useState(room.name);
   const [isDeleteArmed, setDeleteArmed] = useState(false);
-  const [isRestoreArmed, setRestoreArmed] = useState(false);
 
   useEffect(() => {
     setName(room.name);
     setDeleteArmed(false);
-    setRestoreArmed(false);
   }, [room.id, room.name]);
 
   const aiParticipants = useMemo(
@@ -98,14 +109,9 @@ export function RoomSettingsPanel({
     }
   }
 
-  async function restoreLatest() {
-    if (!isRestoreArmed) {
-      setRestoreArmed(true);
-      return;
-    }
-    if (await onRestoreLatest()) {
-      setRestoreArmed(false);
-    }
+  async function restoreBackup() {
+    if (restorePreview) await onRestorePreviewedBackup();
+    else await onPreviewLatestBackup();
   }
 
   return (
@@ -120,6 +126,19 @@ export function RoomSettingsPanel({
           <span className="sr-only">{t("close")}</span>
         </button>
       </header>
+
+      <div className="room-settings-feedback">
+        {error ? (
+          <p className="room-settings-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        {dataMessage ? (
+          <p className="room-settings-success" role="status">
+            {dataMessage}
+          </p>
+        ) : null}
+      </div>
 
       <div className="room-settings-field">
         <label htmlFor="room-settings-name">{t("roomName")}</label>
@@ -146,28 +165,69 @@ export function RoomSettingsPanel({
           <strong>{t("backupTitle")}</strong>
           <span>{t("backupHelp")}</span>
         </div>
+        <div className="room-backup-location">
+          <span>{backupStatus.isCustom ? t("backupCustomLocation") : t("backupDefaultLocation")}</span>
+          <code title={backupStatus.directoryPath}>
+            {backupStatus.directoryPath || t("backupLocationLoading")}
+          </code>
+          {!backupStatus.available && backupStatus.directoryPath ? (
+            <small>{t("backupLocationMissing")}</small>
+          ) : null}
+        </div>
+        <div className="room-backup-location-actions">
+          <button disabled={isBusy} onClick={onChooseBackupDirectory} type="button">
+            {t("backupChooseLocation")}
+          </button>
+          <button
+            disabled={isBusy || !backupStatus.available}
+            onClick={onOpenBackupDirectory}
+            type="button"
+          >
+            {t("backupOpenLocation")}
+          </button>
+          {backupStatus.isCustom ? (
+            <button disabled={isBusy} onClick={onUseDefaultBackupDirectory} type="button">
+              {t("backupUseDefault")}
+            </button>
+          ) : null}
+        </div>
         <div className="room-data-actions">
           <button disabled={isBusy} onClick={onBackup} type="button">
             {t("backup")}
           </button>
           <button
-            className={isRestoreArmed ? "is-armed" : ""}
+            className={restorePreview ? "is-armed" : ""}
             disabled={isBusy}
-            onClick={restoreLatest}
+            onClick={restoreBackup}
             type="button"
           >
-            {isRestoreArmed ? t("reallyRestore") : t("restore")}
+            {restorePreview ? t("reallyRestore") : t("restore")}
           </button>
         </div>
+        {restorePreview ? (
+          <div className="room-restore-preview" role="status">
+            <strong>{t("restorePreviewTitle")}</strong>
+            <span>{t("restorePreviewRooms", { count: restorePreview.roomCount })}</span>
+            <span>{new Date(restorePreview.createdAtUnixMs).toLocaleString()}</span>
+            <code>{restorePreview.fileName}</code>
+            <small>{t("restorePreviewWarning")}</small>
+          </div>
+        ) : null}
       </div>
 
       <div className="room-workspace-zone">
         <div>
           <strong>{t("codexMode")}</strong>
-          <span>{t("workspaceAlphaUnavailable")}</span>
+          <span>
+            {workspace.mode === "workspace"
+              ? workspace.available
+                ? t("workspaceActive", { name: workspace.folderName ?? t("selectedFolder") })
+                : t("workspaceMissing", { name: workspace.folderName ?? t("selectedFolder") })
+              : t("workspaceHelp")}
+          </span>
         </div>
         <div className="room-workspace-actions">
-          <button disabled onClick={onChooseWorkspace} type="button">
+          <button disabled={isBusy} onClick={onChooseWorkspace} type="button">
             {workspace.mode === "workspace" ? t("changeFolder") : t("chooseFolder")}
           </button>
           {workspace.mode === "workspace" ? (
@@ -288,7 +348,7 @@ export function RoomSettingsPanel({
         </div>
       ) : null}
 
-      {!bundledRoomIds.has(room.id) ? (
+      {!isBundledRoom(room.id) ? (
         <div className="room-danger-zone">
           <div>
             <strong>{t("deleteRoom")}</strong>
@@ -307,16 +367,6 @@ export function RoomSettingsPanel({
         <p className="protected-room-note">{t("protectedRoom")}</p>
       )}
 
-      {error ? (
-        <p className="room-settings-error" role="alert">
-          {error}
-        </p>
-      ) : null}
-      {dataMessage ? (
-        <p className="room-settings-success" role="status">
-          {dataMessage}
-        </p>
-      ) : null}
     </section>
   );
 }

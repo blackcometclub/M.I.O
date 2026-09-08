@@ -11,6 +11,7 @@ function isProfile(value: unknown): value is ParticipantProfile {
     || typeof value.participantId !== "string"
     || typeof value.displayName !== "string"
     || typeof value.aiInstructions !== "string"
+    || typeof value.aiModel !== "string"
     || !["providerDefault", "chatOnly", "workspaceRead", "workspaceWrite"].includes(String(value.aiAccessMode))) return false;
   if (value.avatar === null) return true;
   return isRecord(value.avatar)
@@ -35,6 +36,7 @@ export async function saveParticipantProfile(profile: ParticipantProfile) {
     avatar: profile.avatar,
     aiInstructions: profile.aiInstructions,
     aiAccessMode: profile.aiAccessMode,
+    aiModel: profile.aiModel,
   });
   if (!isProfile(value)) throw new Error("The saved participant profile was not valid.");
   return value;

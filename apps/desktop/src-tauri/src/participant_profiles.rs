@@ -16,6 +16,7 @@ const MAXIMUM_FILE_BYTES: usize = 16 * 1024 * 1024;
 const MAXIMUM_AVATAR_DATA_URL_BYTES: usize = 8 * 1024 * 1024;
 const MAXIMUM_DISPLAY_NAME_BYTES: usize = 200;
 const MAXIMUM_AI_INSTRUCTIONS_CHARS: usize = 2_000;
+const PROVIDER_DEFAULT_MODEL: &str = "providerDefault";
 static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -57,6 +58,12 @@ pub(crate) struct ParticipantProfile {
     ai_instructions: String,
     #[serde(default)]
     ai_access_mode: AiAccessMode,
+    #[serde(default = "provider_default_model")]
+    ai_model: String,
+}
+
+fn provider_default_model() -> String {
+    PROVIDER_DEFAULT_MODEL.to_owned()
 }
 
 #[derive(Serialize, Deserialize)]
@@ -146,11 +153,34 @@ fn valid_profile(profile: &ParticipantProfile) -> bool {
             .ai_instructions
             .chars()
             .any(|character| character.is_control() && !matches!(character, '\n' | '\t'))
-        && (profile.participant_id == "codex"
-            || matches!(
+        && valid_ai_model(&profile.participant_id, &profile.ai_model)
+        && match profile.participant_id.as_str() {
+            "codex" => true,
+            "grok" => matches!(
+                profile.ai_access_mode,
+                AiAccessMode::ProviderDefault
+                    | AiAccessMode::ChatOnly
+                    | AiAccessMode::WorkspaceRead
+            ),
+            _ => matches!(
                 profile.ai_access_mode,
                 AiAccessMode::ProviderDefault | AiAccessMode::ChatOnly
-            ))
+            ),
+        }
+}
+
+fn valid_ai_model(participant_id: &str, model: &str) -> bool {
+    model == PROVIDER_DEFAULT_MODEL
+        || matches!(
+            (participant_id, model),
+            ("codex", "gpt-5.6-sol")
+                | ("codex", "gpt-5.6-terra")
+                | ("codex", "gpt-5.6-luna")
+                | ("claude-code", "claude-fable-5")
+                | ("claude-code", "claude-opus-5")
+                | ("claude-code", "claude-sonnet-5")
+                | ("grok", "grok-4.6")
+        )
 }
 
 fn read_file(path: &Path) -> Result<BTreeMap<String, ParticipantProfile>, ParticipantProfileError> {
@@ -291,6 +321,15 @@ impl DesktopParticipantProfiles {
             .effective_for(participant_id)
     }
 
+    pub(crate) fn ai_model(&self, participant_id: &str) -> Option<String> {
+        self.profiles.lock().ok().and_then(|profiles| {
+            profiles
+                .get(participant_id)
+                .map(|profile| profile.ai_model.clone())
+                .filter(|model| model != PROVIDER_DEFAULT_MODEL)
+        })
+    }
+
     #[cfg(test)]
     pub(crate) fn for_tests(display_names: &[(&str, &str)]) -> Arc<Self> {
         let profiles = display_names
@@ -304,6 +343,7 @@ impl DesktopParticipantProfiles {
                         avatar: None,
                         ai_instructions: String::new(),
                         ai_access_mode: AiAccessMode::default(),
+                        ai_model: provider_default_model(),
                     },
                 )
             })
@@ -327,6 +367,7 @@ impl DesktopParticipantProfiles {
                         avatar: None,
                         ai_instructions: (*ai_instructions).to_owned(),
                         ai_access_mode: AiAccessMode::default(),
+                        ai_model: provider_default_model(),
                     },
                 )
             })
@@ -350,6 +391,31 @@ impl DesktopParticipantProfiles {
                         avatar: None,
                         ai_instructions: String::new(),
                         ai_access_mode: *ai_access_mode,
+                        ai_model: provider_default_model(),
+                    },
+                )
+            })
+            .collect();
+        Arc::new(Self {
+            path: PathBuf::new(),
+            profiles: Mutex::new(profiles),
+        })
+    }
+
+    #[cfg(test)]
+    pub(crate) fn for_tests_with_model(profiles: &[(&str, &str, &str)]) -> Arc<Self> {
+        let profiles = profiles
+            .iter()
+            .map(|(participant_id, display_name, ai_model)| {
+                (
+                    (*participant_id).to_owned(),
+                    ParticipantProfile {
+                        participant_id: (*participant_id).to_owned(),
+                        display_name: (*display_name).to_owned(),
+                        avatar: None,
+                        ai_instructions: String::new(),
+                        ai_access_mode: AiAccessMode::default(),
+                        ai_model: (*ai_model).to_owned(),
                     },
                 )
             })
@@ -419,6 +485,7 @@ pub(crate) fn desktop_participant_profile_save(
     avatar: Option<AvatarProfile>,
     ai_instructions: String,
     ai_access_mode: AiAccessMode,
+    ai_model: String,
 ) -> Result<ParticipantProfile, ParticipantProfileError> {
     if !source.has_participant(&participant_id) {
         return Err(invalid_profile());
@@ -429,6 +496,7 @@ pub(crate) fn desktop_participant_profile_save(
         avatar,
         ai_instructions: ai_instructions.trim().to_owned(),
         ai_access_mode,
+        ai_model,
     })
 }
 
@@ -463,6 +531,7 @@ mod tests {
             }),
             ai_instructions: "明るく、短めに答える。".to_owned(),
             ai_access_mode: AiAccessMode::WorkspaceRead,
+            ai_model: "gpt-5.6-sol".to_owned(),
         }
     }
 
@@ -483,6 +552,42 @@ mod tests {
         unsupported_profile.participant_id = "gemini".to_owned();
         unsupported_profile.ai_access_mode = AiAccessMode::WorkspaceWrite;
         assert!(!valid_profile(&unsupported_profile));
+
+        let mut grok_read = example_profile();
+        grok_read.participant_id = "grok".to_owned();
+        grok_read.ai_access_mode = AiAccessMode::WorkspaceRead;
+        grok_read.ai_model = "grok-4.6".to_owned();
+        assert!(valid_profile(&grok_read));
+        grok_read.ai_access_mode = AiAccessMode::WorkspaceWrite;
+        assert!(!valid_profile(&grok_read));
+
+        let mut wrong_provider_model = example_profile();
+        wrong_provider_model.participant_id = "grok".to_owned();
+        assert!(!valid_profile(&wrong_provider_model));
+
+        let mut unknown_model = example_profile();
+        unknown_model.ai_model = "gpt-made-up".to_owned();
+        assert!(!valid_profile(&unknown_model));
+
+        for model in ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"] {
+            let mut codex_model = example_profile();
+            codex_model.ai_model = model.to_owned();
+            assert!(
+                valid_profile(&codex_model),
+                "Codex model {model} should be valid"
+            );
+        }
+
+        for model in ["claude-fable-5", "claude-opus-5", "claude-sonnet-5"] {
+            let mut claude_model = example_profile();
+            claude_model.participant_id = "claude-code".to_owned();
+            claude_model.ai_access_mode = AiAccessMode::ChatOnly;
+            claude_model.ai_model = model.to_owned();
+            assert!(
+                valid_profile(&claude_model),
+                "Claude Code model {model} should be valid"
+            );
+        }
     }
 
     #[test]
@@ -533,6 +638,7 @@ mod tests {
         profile.participant_id = previous_id.to_owned();
         profile.display_name = "Sample Owner".to_owned();
         profile.ai_access_mode = AiAccessMode::ChatOnly;
+        profile.ai_model = super::provider_default_model();
         let file = ProfileFile {
             file_version: FILE_VERSION,
             profiles: BTreeMap::from([(previous_id.to_owned(), profile)]),
@@ -579,6 +685,7 @@ mod tests {
         assert_eq!(store.display_name("codex").as_deref(), Some("Codex"));
         assert_eq!(store.ai_instructions("codex"), None);
         assert_eq!(store.ai_access_mode("codex"), AiAccessMode::ChatOnly);
+        assert_eq!(store.ai_model("codex"), None);
 
         fs::remove_dir_all(directory).expect("test directory should be removed");
     }

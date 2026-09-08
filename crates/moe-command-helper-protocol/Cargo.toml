@@ -1,0 +1,11 @@
+[package]
+name = "moe-command-helper-protocol"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+moe-command-broker = { path = "../moe-command-broker" }
+serde.workspace = true
+serde_json.workspace = true

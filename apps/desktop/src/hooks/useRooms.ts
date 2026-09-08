@@ -8,30 +8,42 @@ import {
   ownerParticipantId,
 } from "../mockData";
 import {
+  activateDesktopCommandRoomSession,
+  deactivateDesktopCommandRoomSession,
+} from "../commandConfirmationBridge";
+import {
   addDesktopRoomParticipant,
   backupDesktopRooms,
   browserBridgeReplyView,
+  cancelDesktopRoomTurn,
+  chooseDesktopRoomBackupDirectory,
   chooseDesktopRoomWorkspace,
   clearDesktopRoomWorkspace,
   clearDesktopRoomConductor,
   createDesktopRoom,
   deleteDesktopRoom,
+  desktopRoomBackupStatusView,
   dispatchDesktopRoomRecipient,
   orchestrateDesktopRoomMessage,
+  openDesktopRoomBackupDirectory,
+  previewLatestDesktopRoomBackup,
   readDesktopAiConnectionStatuses,
   readDesktopRoomConductorStatus,
   readDesktopRoomDispatchUnknowns,
   readDesktopRoom,
+  readDesktopRoomBackupStatus,
   readDesktopRoomWorkspaceStatus,
   readDesktopRooms,
   resetDesktopRoomAiContinuity,
   removeDesktopRoomParticipant,
   renameDesktopRoom,
-  restoreLatestDesktopRoomBackup,
+  restoreDesktopRoomBackup,
   saveDesktopRoomConductorMode,
   setDesktopRoomConductor,
+  useDefaultDesktopRoomBackupDirectory,
   writeDesktopRoomMessage,
 } from "../roomBridge";
+import { isBundledRoom } from "../roomPolicies";
 import {
   readParticipantProfiles,
   saveParticipantProfile as persistParticipantProfile,
@@ -39,9 +51,14 @@ import {
 import type {
   AiConnectionMap,
   ChatMessage,
+  CodexTurnProgress,
+  CodexTurnProgressPhase,
+  ImageGenerationPreferences,
   ParticipantMap,
   ParticipantProfile,
   Room,
+  RoomBackupPreview,
+  RoomBackupStatus,
   RoomConductorStatus,
   RoomWorkspaceStatus,
 } from "../types";
@@ -51,6 +68,15 @@ export type RoomSourceMode = "loading" | "backend" | "browserDemo" | "error";
 
 const dismissedDispatchUnknownsStorageKey = "moe-dismissed-dispatch-unknowns-v1";
 const maximumDismissedDispatchUnknowns = 512;
+const codexTurnProgressPhases = new Set<CodexTurnProgressPhase>([
+  "preparing",
+  "thinking",
+  "reconnecting",
+  "workspace",
+  "tool",
+  "generatingImage",
+  "writingResponse",
+]);
 
 type DispatchUnknown = Awaited<ReturnType<typeof readDesktopRoomDispatchUnknowns>>[number];
 
@@ -116,11 +142,14 @@ export function useRooms() {
   const [recipientIds, setRecipientIds] = useState(initialRecipientIds);
   const [isParticipantMenuOpen, setParticipantMenuOpen] = useState(false);
   const [typingParticipantId, setTypingParticipantId] = useState<string | null>(null);
+  const [codexTurnProgress, setCodexTurnProgress] = useState<CodexTurnProgress | null>(null);
   const [roomSourceMode, setRoomSourceMode] = useState<RoomSourceMode>("loading");
   const [isSending, setSending] = useState(false);
-  const [isAwaitingReply, setAwaitingReply] = useState(false);
+  const [activeTurnRoomId, setActiveTurnRoomId] = useState<string | null>(null);
+  const [isCancelling, setCancelling] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [sendNotice, setSendNotice] = useState<string | null>(null);
+  const [sendFeedbackRoomId, setSendFeedbackRoomId] = useState(initialRooms[0].id);
   const [dispatchSafetyWarning, setDispatchSafetyWarning] = useState<string | null>(null);
   const [dispatchSafetyWarningKeys, setDispatchSafetyWarningKeys] = useState<string[]>([]);
   const [dismissedDispatchUnknownKeys, setDismissedDispatchUnknownKeys] = useState(
@@ -129,6 +158,12 @@ export function useRooms() {
   const [dispatchSafetyRevision, setDispatchSafetyRevision] = useState(0);
   const [roomMutationError, setRoomMutationError] = useState<string | null>(null);
   const [roomDataMessage, setRoomDataMessage] = useState<string | null>(null);
+  const [roomBackupStatus, setRoomBackupStatus] = useState<RoomBackupStatus>({
+    directoryPath: "",
+    isCustom: false,
+    available: false,
+  });
+  const [roomRestorePreview, setRoomRestorePreview] = useState<RoomBackupPreview | null>(null);
   const [roomWorkspace, setRoomWorkspace] = useState<RoomWorkspaceStatus>({
     roomId: initialRooms[0].id,
     mode: "chatOnly",
@@ -140,7 +175,13 @@ export function useRooms() {
     conductorId: null,
     sendMode: "direct",
   });
+  const [workspaceStatusKey, setWorkspaceStatusKey] = useState<string | null>(null);
+  const [conductorStatusKey, setConductorStatusKey] = useState<string | null>(null);
   const isSendingRef = useRef(false);
+  const isCancellingRef = useRef(false);
+  const stopRequestedRef = useRef(false);
+  const activeTurnRef = useRef<{ messageId: string; roomId: string } | null>(null);
+  const activeRoomIdRef = useRef(activeRoomId);
   const directRecipientIdsRef = useRef<Record<string, string[]>>({
     [initialRooms[0].id]: initialRecipientIds,
   });
@@ -161,6 +202,18 @@ export function useRooms() {
     () => rooms.find((room) => room.id === activeRoomId) ?? rooms[0],
     [activeRoomId, rooms],
   );
+
+  const isAwaitingReply = activeTurnRoomId === activeRoom.id;
+  const isAnotherRoomAwaitingReply =
+    activeTurnRoomId !== null && activeTurnRoomId !== activeRoom.id;
+  const activeRoomConfigurationKey = `${roomSourceMode}:${activeRoom.id}`;
+  const workspaceStatusReady = workspaceStatusKey === activeRoomConfigurationKey;
+  const conductorStatusReady = conductorStatusKey === activeRoomConfigurationKey;
+  const roomConfigurationReady = workspaceStatusReady && conductorStatusReady;
+
+  useEffect(() => {
+    activeRoomIdRef.current = activeRoom.id;
+  }, [activeRoom.id]);
 
   const roomParticipants = useMemo(
     () =>
@@ -261,6 +314,48 @@ export function useRooms() {
     }
     let disposed = false;
     let stopListening: (() => void) | undefined;
+    void listen<{
+      roomId?: unknown;
+      dispatchId?: unknown;
+      phase?: unknown;
+    }>("mio-codex-turn-progress", (event) => {
+      if (disposed) return;
+      const { roomId, dispatchId, phase } = event.payload ?? {};
+      if (
+        typeof roomId !== "string" ||
+        typeof dispatchId !== "string" ||
+        typeof phase !== "string" ||
+        !codexTurnProgressPhases.has(phase as CodexTurnProgressPhase) ||
+        activeTurnRef.current?.roomId !== roomId
+      ) {
+        return;
+      }
+      setCodexTurnProgress((current) => ({
+        roomId,
+        dispatchId,
+        phase: phase as CodexTurnProgressPhase,
+        startedAt: current?.roomId === roomId ? current.startedAt : Date.now(),
+      }));
+    })
+      .then((unlisten) => {
+        if (disposed) unlisten();
+        else stopListening = unlisten;
+      })
+      .catch(() => {
+        // Progress is optional; message delivery continues if the listener is unavailable.
+      });
+    return () => {
+      disposed = true;
+      stopListening?.();
+    };
+  }, [roomSourceMode]);
+
+  useEffect(() => {
+    if (!("__TAURI_INTERNALS__" in window) || roomSourceMode !== "backend") {
+      return;
+    }
+    let disposed = false;
+    let stopListening: (() => void) | undefined;
     void listen<unknown>("moe-browser-bridge-reply", (event) => {
       if (disposed) return;
       try {
@@ -276,9 +371,13 @@ export function useRooms() {
               }
             : room,
         ));
-        setTypingParticipantId((current) => current === "gemini" ? null : current);
-        setSendError(null);
+        setTypingParticipantId((current) => {
+          if (current !== "gemini") return current;
+          return activeTurnRef.current ? current : null;
+        });
       } catch {
+        const roomId = activeRoomIdRef.current;
+        setSendFeedbackRoomId(roomId);
         setSendError(text(
           "Gemini Searchの返答を安全に確認できませんでした。Roomには追加していません。",
           "The Gemini Search reply could not be validated and was not added to the Room.",
@@ -291,6 +390,8 @@ export function useRooms() {
       })
       .catch(() => {
         if (!disposed) {
+          const roomId = activeRoomIdRef.current;
+          setSendFeedbackRoomId(roomId);
           setSendError(text(
             "Gemini Searchの返答待受を開始できませんでした。",
             "The Gemini Search reply listener could not be started.",
@@ -329,6 +430,7 @@ export function useRooms() {
         })
         .catch(() => {
           if (!disposed) {
+            setSendFeedbackRoomId(roomId);
             setSendError(text(
               "Codexから保存されたメッセージを再読込できませんでした。",
               "The message saved via Codex could not be reloaded.",
@@ -342,6 +444,8 @@ export function useRooms() {
       })
       .catch(() => {
         if (!disposed) {
+          const roomId = activeRoomIdRef.current;
+          setSendFeedbackRoomId(roomId);
           setSendError(text(
             "Codexからのメッセージ通知を待受できませんでした。",
             "The via-Codex message listener could not be started.",
@@ -356,20 +460,25 @@ export function useRooms() {
 
   useEffect(() => {
     const roomId = activeRoom.id;
+    const statusKey = `${roomSourceMode}:${roomId}`;
     if (!("__TAURI_INTERNALS__" in window) || roomSourceMode !== "backend") {
       setRoomWorkspace({ roomId, mode: "chatOnly", folderName: null, available: true });
+      setWorkspaceStatusKey(statusKey);
       return;
     }
     let cancelled = false;
+    setWorkspaceStatusKey(null);
     void readDesktopRoomWorkspaceStatus(roomId)
       .then((status) => {
         if (!cancelled) {
           setRoomWorkspace(status);
+          setWorkspaceStatusKey(statusKey);
         }
       })
       .catch(() => {
         if (!cancelled) {
           setRoomWorkspace({ roomId, mode: "chatOnly", folderName: null, available: false });
+          setWorkspaceStatusKey(statusKey);
         }
       });
     return () => {
@@ -380,14 +489,28 @@ export function useRooms() {
   useEffect(() => {
     const roomId = activeRoom.id;
     if (!("__TAURI_INTERNALS__" in window) || roomSourceMode !== "backend") {
+      return;
+    }
+    void activateDesktopCommandRoomSession(roomId).catch(() => {
+      // A missing or changed workspace leaves command execution fail closed.
+    });
+  }, [activeRoom.id, roomSourceMode]);
+
+  useEffect(() => {
+    const roomId = activeRoom.id;
+    const statusKey = `${roomSourceMode}:${roomId}`;
+    if (!("__TAURI_INTERNALS__" in window) || roomSourceMode !== "backend") {
       setRoomConductor({ roomId, conductorId: null, sendMode: "direct" });
+      setConductorStatusKey(statusKey);
       return;
     }
     let cancelled = false;
+    setConductorStatusKey(null);
     void readDesktopRoomConductorStatus(roomId)
       .then((status) => {
         if (cancelled) return;
         setRoomConductor(status);
+        setConductorStatusKey(statusKey);
         if (status.sendMode === "conductor" && status.conductorId) {
           setRecipientIds((current) => {
             if (!directRecipientIdsRef.current[roomId]) {
@@ -400,6 +523,7 @@ export function useRooms() {
       .catch(() => {
         if (!cancelled) {
           setRoomConductor({ roomId, conductorId: null, sendMode: "direct" });
+          setConductorStatusKey(statusKey);
         }
       });
     return () => {
@@ -468,16 +592,96 @@ export function useRooms() {
   ]);
 
   function dismissDispatchSafetyWarning() {
-    if (dispatchSafetyWarningKeys.length === 0) return;
-    setDismissedDispatchUnknownKeys((current) => {
-      const next = Array.from(new Set([...current, ...dispatchSafetyWarningKeys]))
-        .slice(-maximumDismissedDispatchUnknowns);
-      persistDismissedDispatchUnknowns(next);
-      return next;
-    });
+    if (dispatchSafetyWarningKeys.length > 0) {
+      setDismissedDispatchUnknownKeys((current) => {
+        const next = Array.from(new Set([...current, ...dispatchSafetyWarningKeys]))
+          .slice(-maximumDismissedDispatchUnknowns);
+        persistDismissedDispatchUnknowns(next);
+        return next;
+      });
+    }
     setDispatchSafetyWarning(null);
     setDispatchSafetyWarningKeys([]);
   }
+
+  function dismissSendError() {
+    setSendError(null);
+  }
+
+  useEffect(() => {
+    if (!("__TAURI_INTERNALS__" in window) || roomSourceMode !== "backend") {
+      return;
+    }
+    let cancelled = false;
+    void readDesktopRoomBackupStatus()
+      .then((status) => {
+        if (!cancelled) setRoomBackupStatus(status);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setRoomMutationError(text(
+            "バックアップ保存先を確認できませんでした。",
+            "The backup directory could not be checked.",
+          ));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [locale, roomSourceMode]);
+
+  useEffect(() => {
+    if (!("__TAURI_INTERNALS__" in window) || roomSourceMode !== "backend") {
+      return;
+    }
+    let disposed = false;
+    let stopListening: (() => void) | undefined;
+    void listen<{
+      changed: boolean;
+      status: unknown;
+      errorCode: string | null;
+    }>("moe-room-backup-directory-choice", (event) => {
+      if (disposed) return;
+      isSendingRef.current = false;
+      setSending(false);
+      setRoomRestorePreview(null);
+      if (event.payload.errorCode) {
+        setRoomMutationError(text(
+          "バックアップ保存先を設定できませんでした。選択したフォルダーをご確認ください。",
+          "The backup directory could not be set. Check the selected folder.",
+        ));
+        return;
+      }
+      try {
+        const status = desktopRoomBackupStatusView(event.payload.status);
+        setRoomBackupStatus(status);
+        setRoomDataMessage(event.payload.changed
+          ? text("バックアップ保存先を変更しました。既存ファイルは移動していません。", "The backup directory was changed. Existing files were not moved.")
+          : text("フォルダー選択をキャンセルしました。", "Folder selection was canceled."));
+      } catch {
+        setRoomMutationError(text(
+          "バックアップ保存先の応答を確認できませんでした。",
+          "The backup directory response could not be validated.",
+        ));
+      }
+    })
+      .then((unlisten) => {
+        if (disposed) unlisten();
+        else stopListening = unlisten;
+      })
+      .catch(() => {
+        if (!disposed) {
+          setRoomMutationError(text(
+            "バックアップ保存先の応答を待受できませんでした。",
+            "The backup directory response could not be received.",
+          ));
+        }
+      });
+    return () => {
+      disposed = true;
+      stopListening?.();
+    };
+  }, [locale, roomSourceMode]);
 
   useEffect(() => {
     if (!("__TAURI_INTERNALS__" in window) || roomSourceMode !== "backend") {
@@ -507,11 +711,24 @@ export function useRooms() {
         return;
       }
       void readDesktopRoomWorkspaceStatus(activeRoom.id)
-        .then((status) => {
+        .then(async (status) => {
           if (disposed) {
             return;
           }
           setRoomWorkspace(status);
+          if (event.payload.changed) {
+            const session = await activateDesktopCommandRoomSession(activeRoom.id);
+            if (disposed) {
+              return;
+            }
+            if (!session.active) {
+              setRoomMutationError(text(
+                "作業フォルダーは設定されましたが、コマンド用の安全なRoomセッションを開始できませんでした。",
+                "The workspace was selected, but its safe Room command session could not be started.",
+              ));
+              return;
+            }
+          }
           setRoomDataMessage(
             event.payload.changed
               ? text(`${status.folderName ?? "選択フォルダー"}をCodex作業フォルダーに設定しました。`, `${status.folderName ?? "Selected folder"} is now the Codex workspace.`)
@@ -559,10 +776,26 @@ export function useRooms() {
       return;
     }
 
+    if (activeRoom.id !== roomId) {
+      setRoomMutationError(null);
+      setRoomDataMessage(null);
+    }
+
+    if (
+      roomSourceMode === "backend" &&
+      activeRoom.id !== roomId &&
+      activeTurnRef.current?.roomId !== activeRoom.id
+    ) {
+      void deactivateDesktopCommandRoomSession(activeRoom.id).catch(() => {
+        // Command execution remains fail closed if the old session cannot be ended.
+      });
+    }
+
     const firstAi = nextRoom.participantIds.find(
       (participantId) => participants[participantId]?.kind === "ai",
     );
 
+    activeRoomIdRef.current = roomId;
     setActiveRoomId(roomId);
     const nextRecipients = directRecipientIdsRef.current[roomId]?.filter((participantId) =>
       nextRoom.participantIds.includes(participantId)
@@ -570,9 +803,9 @@ export function useRooms() {
     directRecipientIdsRef.current[roomId] = nextRecipients;
     setRecipientIds(nextRecipients);
     setParticipantMenuOpen(false);
-    setTypingParticipantId(null);
-    setSendError(null);
-    setSendNotice(null);
+    if (!activeTurnRef.current) {
+      setTypingParticipantId(null);
+    }
   }
 
   async function createRoom() {
@@ -615,13 +848,17 @@ export function useRooms() {
         ? currentRooms
         : [...currentRooms, newRoom],
     );
+    activeRoomIdRef.current = newRoom.id;
     setActiveRoomId(newRoom.id);
     setRecipientIds(["codex"]);
     setParticipantMenuOpen(false);
   }
 
   function toggleRecipient(participantId: string) {
-    if (roomConductor.sendMode === "conductor") {
+    if (
+      roomConductor.sendMode === "conductor" ||
+      activeTurnRef.current?.roomId === activeRoom.id
+    ) {
       return;
     }
     setRecipientIds((currentIds) =>
@@ -636,7 +873,11 @@ export function useRooms() {
   }
 
   async function addParticipant(participantId: string) {
-    if (isSendingRef.current || activeRoom.participantIds.includes(participantId)) {
+    if (
+      isSendingRef.current ||
+      activeTurnRef.current?.roomId === activeRoom.id ||
+      activeRoom.participantIds.includes(participantId)
+    ) {
       return;
     }
     let nextParticipantIds = [...activeRoom.participantIds, participantId];
@@ -679,7 +920,11 @@ export function useRooms() {
 
   async function renameRoom(name: string) {
     const nextName = name.trim();
-    if (!nextName || isSendingRef.current) {
+    if (
+      !nextName ||
+      isSendingRef.current ||
+      activeTurnRef.current?.roomId === activeRoom.id
+    ) {
       return false;
     }
     if (nextName === activeRoom.name) {
@@ -727,7 +972,8 @@ export function useRooms() {
       !activeRoom.participantIds.includes(participantId) ||
       aiIds.length <= 1 ||
       isReferenced ||
-      isSendingRef.current
+      isSendingRef.current ||
+      activeTurnRef.current?.roomId === activeRoom.id
     ) {
       return false;
     }
@@ -768,10 +1014,13 @@ export function useRooms() {
     }
   }
 
-  async function deleteRoom() {
+  async function deleteRoom(roomId = activeRoom.id) {
+    const roomToDelete = rooms.find((room) => room.id === roomId);
     if (
-      ["moe-dev-room", "comparison-room", "mcp-lab"].includes(activeRoom.id) ||
-      isSendingRef.current
+      !roomToDelete ||
+      isBundledRoom(roomToDelete.id) ||
+      isSendingRef.current ||
+      activeTurnRef.current?.roomId === roomToDelete.id
     ) {
       return false;
     }
@@ -783,22 +1032,108 @@ export function useRooms() {
         if (roomSourceMode !== "backend") {
           throw new Error("Room backend unavailable");
         }
-        await deleteDesktopRoom({ roomId: activeRoom.id, name: activeRoom.name });
+        await deactivateDesktopCommandRoomSession(roomToDelete.id);
+        await deleteDesktopRoom({ roomId: roomToDelete.id, name: roomToDelete.name });
       }
-      const remainingRooms = rooms.filter((room) => room.id !== activeRoom.id);
-      const nextRoom = remainingRooms[0];
+      const remainingRooms = rooms.filter((room) => room.id !== roomToDelete.id);
       setRooms(remainingRooms);
-      if (nextRoom) {
-        const firstAi = nextRoom.participantIds.find(
-          (id) => participants[id]?.kind === "ai",
-        );
-        setActiveRoomId(nextRoom.id);
-        setRecipientIds(firstAi ? [firstAi] : []);
+      if (activeRoom.id === roomToDelete.id) {
+        const nextRoom = remainingRooms[0];
+        if (nextRoom) {
+          const firstAi = nextRoom.participantIds.find(
+            (id) => participants[id]?.kind === "ai",
+          );
+          activeRoomIdRef.current = nextRoom.id;
+          setActiveRoomId(nextRoom.id);
+          setRecipientIds(firstAi ? [firstAi] : []);
+        }
       }
       setParticipantMenuOpen(false);
       return true;
     } catch {
+      if (roomSourceMode === "backend" && activeRoom.id === roomToDelete.id) {
+        void activateDesktopCommandRoomSession(roomToDelete.id).catch(() => {
+          // A failed reactivation leaves command execution unavailable rather than widening access.
+        });
+      }
       setRoomMutationError(text("ルームを削除できませんでした。もう一度お試しください。", "The room could not be deleted. Please try again."));
+      return false;
+    } finally {
+      isSendingRef.current = false;
+      setSending(false);
+    }
+  }
+
+  async function chooseBackupDirectory() {
+    if (isSendingRef.current || roomSourceMode !== "backend") return false;
+    isSendingRef.current = true;
+    setSending(true);
+    setRoomMutationError(null);
+    setRoomDataMessage(null);
+    setRoomRestorePreview(null);
+    try {
+      const status = await chooseDesktopRoomBackupDirectory();
+      setRoomBackupStatus(status);
+      setRoomDataMessage(text(
+        "Windowsの選択画面でバックアップ保存先を選んでください。",
+        "Choose the backup directory in the Windows dialog.",
+      ));
+      return true;
+    } catch {
+      setRoomMutationError(text(
+        "バックアップ保存先を選択できませんでした。",
+        "The backup directory could not be selected.",
+      ));
+      return false;
+    } finally {
+      // The backend returns as soon as the native modal dialog opens. Do not
+      // keep the whole app locked while waiting for its later result event.
+      isSendingRef.current = false;
+      setSending(false);
+    }
+  }
+
+  async function useDefaultBackupDirectory() {
+    if (isSendingRef.current || roomSourceMode !== "backend") return false;
+    isSendingRef.current = true;
+    setSending(true);
+    setRoomMutationError(null);
+    setRoomDataMessage(null);
+    setRoomRestorePreview(null);
+    try {
+      const status = await useDefaultDesktopRoomBackupDirectory();
+      setRoomBackupStatus(status);
+      setRoomDataMessage(text(
+        "既定のバックアップ保存先へ戻しました。既存ファイルは移動していません。",
+        "The default backup directory is selected. Existing files were not moved.",
+      ));
+      return true;
+    } catch {
+      setRoomMutationError(text(
+        "既定のバックアップ保存先へ戻せませんでした。",
+        "The default backup directory could not be selected.",
+      ));
+      return false;
+    } finally {
+      isSendingRef.current = false;
+      setSending(false);
+    }
+  }
+
+  async function openBackupDirectory() {
+    if (isSendingRef.current || roomSourceMode !== "backend") return false;
+    isSendingRef.current = true;
+    setSending(true);
+    setRoomMutationError(null);
+    try {
+      const status = await openDesktopRoomBackupDirectory();
+      setRoomBackupStatus(status);
+      return true;
+    } catch {
+      setRoomMutationError(text(
+        "バックアップ保存先を開けませんでした。フォルダーが存在するかご確認ください。",
+        "The backup directory could not be opened. Check that the folder exists.",
+      ));
       return false;
     } finally {
       isSendingRef.current = false;
@@ -818,14 +1153,20 @@ export function useRooms() {
     setSending(true);
     setRoomMutationError(null);
     setRoomDataMessage(null);
+    setRoomRestorePreview(null);
     try {
       const result = await backupDesktopRooms();
+      const status = await readDesktopRoomBackupStatus();
+      setRoomBackupStatus(status);
       setRoomDataMessage(
         text(`${result.roomCount}室をバックアップしました：${result.fileName}`, `Backed up ${result.roomCount} rooms: ${result.fileName}`),
       );
       return true;
     } catch {
-      setRoomMutationError(text("バックアップを作成できませんでした。Documentsフォルダーをご確認ください。", "The backup could not be created. Check the Documents folder."));
+      setRoomMutationError(text(
+        "バックアップを作成できませんでした。表示中の保存先をご確認ください。別の場所へは保存していません。",
+        "The backup could not be created. Check the displayed directory. Nothing was saved elsewhere.",
+      ));
       return false;
     } finally {
       isSendingRef.current = false;
@@ -833,7 +1174,7 @@ export function useRooms() {
     }
   }
 
-  async function restoreLatestBackup() {
+  async function previewLatestBackup() {
     if (
       !("__TAURI_INTERNALS__" in window) ||
       roomSourceMode !== "backend" ||
@@ -846,7 +1187,43 @@ export function useRooms() {
     setRoomMutationError(null);
     setRoomDataMessage(null);
     try {
-      const result = await restoreLatestDesktopRoomBackup();
+      const preview = await previewLatestDesktopRoomBackup();
+      setRoomRestorePreview(preview);
+      return true;
+    } catch {
+      setRoomRestorePreview(null);
+      setRoomMutationError(text(
+        "復元できる正常なバックアップを確認できませんでした。Roomデータは変更していません。",
+        "A valid backup could not be verified. Room data was not changed.",
+      ));
+      return false;
+    } finally {
+      isSendingRef.current = false;
+      setSending(false);
+    }
+  }
+
+  async function restorePreviewedBackup() {
+    if (
+      !("__TAURI_INTERNALS__" in window) ||
+      roomSourceMode !== "backend" ||
+      isSendingRef.current ||
+      activeTurnRef.current !== null ||
+      !roomRestorePreview
+    ) {
+      return false;
+    }
+    const confirmedPreview = roomRestorePreview;
+    const previousRoomId = activeRoom.id;
+    let restoreCompleted = false;
+    isSendingRef.current = true;
+    setSending(true);
+    setRoomMutationError(null);
+    setRoomDataMessage(null);
+    try {
+      await Promise.all(rooms.map((room) => deactivateDesktopCommandRoomSession(room.id)));
+      const result = await restoreDesktopRoomBackup(confirmedPreview.fileName);
+      restoreCompleted = true;
       const hydration = await readDesktopRooms();
       const nextRoom = hydration.rooms[0];
       const firstAi = nextRoom?.participantIds.find(
@@ -855,16 +1232,45 @@ export function useRooms() {
       setCanonicalParticipants((current) => ({ ...current, ...hydration.participants }));
       setRooms(hydration.rooms);
       if (nextRoom) {
+        activeRoomIdRef.current = nextRoom.id;
         setActiveRoomId(nextRoom.id);
         setRecipientIds(firstAi ? [firstAi] : []);
+        try {
+          await activateDesktopCommandRoomSession(nextRoom.id);
+        } catch {
+          setRoomMutationError(text(
+            "復元は完了しましたが、Codex作業モードを再開できませんでした。作業フォルダーを選び直してください。",
+            "The restore completed, but Codex workspace mode could not be restarted. Choose the workspace folder again.",
+          ));
+        }
       }
       setParticipantMenuOpen(false);
+      setRoomRestorePreview(null);
       setRoomDataMessage(
         text(`${result.fileName} から${result.roomCount}室を復元しました。`, `Restored ${result.roomCount} rooms from ${result.fileName}.`),
       );
       return true;
     } catch {
-      setRoomMutationError(text("復元できませんでした。先にバックアップを作成してください。", "Restore failed. Create a backup first."));
+      setRoomRestorePreview(null);
+      if (!restoreCompleted) {
+        try {
+          await activateDesktopCommandRoomSession(previousRoomId);
+        } catch {
+          // Restoration did not begin, but command execution remains fail closed
+          // if the previous Room session cannot be recreated safely.
+        }
+      }
+      setRoomMutationError(
+        restoreCompleted
+          ? text(
+              "バックアップの復元は完了しましたが、画面へ再読み込みできませんでした。M.I.O.を再起動してください。",
+              "The backup was restored, but the screen could not be refreshed. Restart M.I.O.",
+            )
+          : text(
+              "確認したバックアップを復元できませんでした。新しいバックアップが増えた場合は、もう一度内容をご確認ください。",
+              "The confirmed backup could not be restored. If a newer backup appeared, review the backup again.",
+            ),
+      );
       return false;
     } finally {
       isSendingRef.current = false;
@@ -873,7 +1279,11 @@ export function useRooms() {
   }
 
   async function chooseWorkspace() {
-    if (isSendingRef.current || roomSourceMode !== "backend") {
+    if (
+      isSendingRef.current ||
+      roomSourceMode !== "backend" ||
+      activeTurnRef.current?.roomId === activeRoom.id
+    ) {
       return false;
     }
     isSendingRef.current = true;
@@ -886,15 +1296,22 @@ export function useRooms() {
       setRoomDataMessage(text("Windowsの選択画面で作業フォルダーを選んでください。", "Choose a workspace folder in the Windows dialog."));
       return true;
     } catch {
-      isSendingRef.current = false;
-      setSending(false);
       setRoomMutationError(text("作業フォルダーを設定できませんでした。", "The workspace folder could not be set."));
       return false;
+    } finally {
+      // The native dialog is modal. Its result arrives through the listener,
+      // so the launch guard must never depend on that event to be released.
+      isSendingRef.current = false;
+      setSending(false);
     }
   }
 
   async function clearWorkspace() {
-    if (isSendingRef.current || roomSourceMode !== "backend") {
+    if (
+      isSendingRef.current ||
+      roomSourceMode !== "backend" ||
+      activeTurnRef.current?.roomId === activeRoom.id
+    ) {
       return false;
     }
     isSendingRef.current = true;
@@ -904,6 +1321,7 @@ export function useRooms() {
     try {
       const status = await clearDesktopRoomWorkspace(activeRoom.id);
       setRoomWorkspace(status);
+      await activateDesktopCommandRoomSession(activeRoom.id);
       setRoomDataMessage(text("Codexを会話のみに戻しました。", "Codex has returned to chat-only mode."));
       return true;
     } catch {
@@ -916,7 +1334,11 @@ export function useRooms() {
   }
 
   async function configureRoomConductor(conductorId: string | null) {
-    if (isSendingRef.current || roomSourceMode !== "backend") {
+    if (
+      isSendingRef.current ||
+      roomSourceMode !== "backend" ||
+      activeTurnRef.current?.roomId === activeRoom.id
+    ) {
       return false;
     }
     isSendingRef.current = true;
@@ -954,7 +1376,9 @@ export function useRooms() {
   async function changeConductorSendMode(sendMode: "direct" | "conductor") {
     if (
       isSendingRef.current ||
+      activeTurnRef.current?.roomId === activeRoom.id ||
       roomSourceMode !== "backend" ||
+      !roomConfigurationReady ||
       !roomConductor.conductorId ||
       roomConductor.sendMode === sendMode
     ) {
@@ -990,17 +1414,29 @@ export function useRooms() {
     }
   }
 
-  async function sendMessage(body: string) {
-    if (selectedRecipients.length === 0 || isSendingRef.current) {
+  async function sendMessage(body: string, imageGeneration: ImageGenerationPreferences | null) {
+    if (
+      selectedRecipients.length === 0 ||
+      isSendingRef.current ||
+      activeTurnRef.current !== null
+    ) {
       return false;
     }
 
     const roomId = activeRoom.id;
+    setSendFeedbackRoomId(roomId);
     const primaryRecipient = selectedRecipients[0];
     const targetIds = selectedRecipients.map((participant) => participant.id);
     const targetsBackendRoom = "__TAURI_INTERNALS__" in window;
     if (targetsBackendRoom && roomSourceMode !== "backend") {
       setSendError(text("Rust Roomが利用できないため送信できません。接続状態を確認してください。", "The message cannot be sent while Rust Room is unavailable."));
+      return false;
+    }
+    if (targetsBackendRoom && !roomConfigurationReady) {
+      setSendError(text(
+        "ルーム設定を確認中です。確認が終わってから送信してください。",
+        "Room settings are still being checked. Send after the check finishes.",
+      ));
       return false;
     }
     if (targetsBackendRoom) {
@@ -1019,6 +1455,9 @@ export function useRooms() {
             body,
           };
       pendingWrite.current = write;
+      stopRequestedRef.current = false;
+      isCancellingRef.current = false;
+      setCancelling(false);
       isSendingRef.current = true;
       setSending(true);
       setSendError(null);
@@ -1042,13 +1481,26 @@ export function useRooms() {
           ),
         );
         pendingWrite.current = null;
+        activeTurnRef.current = { roomId, messageId: write.messageId };
+        setActiveTurnRoomId(roomId);
+        const codexWillRun =
+          roomConductor.roomId === roomId &&
+          roomConductor.sendMode === "conductor" &&
+          roomConductor.conductorId
+            ? roomConductor.conductorId === "codex"
+            : targetIds.includes("codex");
+        setCodexTurnProgress(codexWillRun ? {
+          roomId,
+          dispatchId: "",
+          phase: "preparing",
+          startedAt: Date.now(),
+        } : null);
         if (
           roomConductor.roomId === roomId &&
           roomConductor.sendMode === "conductor" &&
           roomConductor.conductorId
         ) {
           setTypingParticipantId(roomConductor.conductorId);
-          setAwaitingReply(true);
           void orchestrateDesktopRoomMessage({
             roomId,
             messageId: write.messageId,
@@ -1056,6 +1508,11 @@ export function useRooms() {
           })
             .then((orchestration) => {
               if (orchestration.message) {
+                void readDesktopAiConnectionStatuses()
+                  .then(setAiConnections)
+                  .catch(() => {
+                    // Keep the last known state when a post-response refresh fails.
+                  });
                 setRooms((currentRooms) =>
                   currentRooms.map((room) =>
                     room.id === roomId
@@ -1072,10 +1529,17 @@ export function useRooms() {
                   ),
                 );
               } else if (orchestration.status === "unknown") {
-                setSendError(text(
-                  "指揮処理の結果を確認できませんでした。二重実行防止のため自動再送していません。",
-                  "The orchestration result is unknown. It was not retried to prevent duplicate work.",
-                ));
+                if (stopRequestedRef.current) {
+                  setSendNotice(text(
+                    "AI処理を停止しました。依頼はすでにAIへ届いている可能性があります。自動再送していません。",
+                    "The AI turn was stopped. The request may already have reached the AI and was not retried.",
+                  ));
+                } else {
+                  setSendError(text(
+                    "指揮処理の結果を確認できませんでした。二重実行防止のため自動再送していません。",
+                    "The orchestration result is unknown. It was not retried to prevent duplicate work.",
+                  ));
+                }
               } else {
                 setSendError(text(
                   "指揮者がこの依頼を完了できませんでした。",
@@ -1084,14 +1548,30 @@ export function useRooms() {
               }
             })
             .catch(() => {
-              setSendError(text(
-                "指揮処理を確認できませんでした。二重実行防止のため自動再送していません。",
-                "Room orchestration could not be confirmed and was not retried.",
-              ));
+              if (stopRequestedRef.current) {
+                setSendNotice(text(
+                  "AI処理を停止しました。依頼はすでにAIへ届いている可能性があります。自動再送していません。",
+                  "The AI turn was stopped. The request may already have reached the AI and was not retried.",
+                ));
+              } else {
+                setSendError(text(
+                  "指揮処理を確認できませんでした。二重実行防止のため自動再送していません。",
+                  "Room orchestration could not be confirmed and was not retried.",
+                ));
+              }
             })
             .finally(() => {
+              activeTurnRef.current = null;
+              setActiveTurnRoomId(null);
+              if (activeRoomIdRef.current !== roomId) {
+                void deactivateDesktopCommandRoomSession(roomId).catch(() => {
+                  // A failed cleanup leaves later command execution fail closed.
+                });
+              }
+              setCodexTurnProgress(null);
+              isCancellingRef.current = false;
+              setCancelling(false);
               setTypingParticipantId(null);
-              setAwaitingReply(false);
               setDispatchSafetyRevision((revision) => revision + 1);
             });
           return true;
@@ -1099,7 +1579,9 @@ export function useRooms() {
         const pendingRecipientIds = new Set(targetIds);
         let singleGeminiQueued = false;
         const nextNativeTypingId = () =>
-          [...pendingRecipientIds].find((id) => id === "codex" || id === "grok") ?? null;
+          [...pendingRecipientIds].find((id) =>
+            id === "codex" || id === "grok" || id === "claude-code" || id === "gemini"
+          ) ?? null;
         const appendSendError = (message: string) => {
           setSendError((current) => current ? `${current} ${message}` : message);
         };
@@ -1107,9 +1589,9 @@ export function useRooms() {
           setSendNotice((current) => current ? `${current} ${message}` : message);
         };
         setTypingParticipantId(nextNativeTypingId());
-        setAwaitingReply(true);
         const dispatches = targetIds.map((participantId) =>
           dispatchDesktopRoomRecipient({
+            imageGeneration: participantId === "codex" ? imageGeneration : null,
             roomId,
             messageId: write.messageId,
             participantId,
@@ -1117,6 +1599,11 @@ export function useRooms() {
           })
           .then((dispatch) => {
             if (dispatch.messages.length > 0) {
+              void readDesktopAiConnectionStatuses()
+                .then(setAiConnections)
+                .catch(() => {
+                  // Keep the last known state when a post-response refresh fails.
+                });
               setRooms((currentRooms) =>
                 currentRooms.map((room) =>
                   room.id === roomId
@@ -1148,14 +1635,75 @@ export function useRooms() {
               const workspaceSandboxFailures = dispatch.failedRecipients.filter(
                 ({ code }) => code === "codexWorkspaceSandboxUnavailable",
               );
+              const workspaceUnavailableFailures = dispatch.failedRecipients.filter(
+                ({ code }) => code === "roomWorkspaceUnavailable",
+              );
+              const workspaceUnsafeLinkFailures = dispatch.failedRecipients.filter(
+                ({ code }) => code === "roomWorkspaceUnsafeLink",
+              );
+              const codexUpdateRequiredFailures = dispatch.failedRecipients.filter(
+                ({ code }) => code === "codexClientUpdateRequired",
+              );
+              const codexConfirmedFailures = dispatch.failedRecipients.filter(
+                ({ code }) => code === "codexTurnFailed",
+              );
+              const codexPreflightFailures = dispatch.failedRecipients.filter(
+                ({ code }) => code === "codexPreflightFailed",
+              );
               const otherFailures = dispatch.failedRecipients.filter(
-                ({ code }) => code !== "codexWorkspaceSandboxUnavailable",
+                ({ code }) =>
+                  code !== "codexWorkspaceSandboxUnavailable" &&
+                  code !== "roomWorkspaceUnavailable" &&
+                  code !== "roomWorkspaceUnsafeLink" &&
+                  code !== "codexClientUpdateRequired" &&
+                  code !== "codexPreflightFailed" &&
+                  code !== "codexTurnFailed",
               );
               if (workspaceSandboxFailures.length > 0) {
                 appendSendError(
                   text(
-                    "Codexのworkspaceアクセスは、nested junctionの読取り境界を満たさないため、このWindows alphaでは無効です。会話のみは利用できます。メッセージは保存済みで、自動再送していません。",
-                    "Codex workspace access is disabled in this Windows alpha because the nested-junction read boundary is not contained. Chat-only messages remain available. The message was saved and was not retried.",
+                    "CodexのWindows保護機能を安全な状態で開始できませんでした。会話のみに戻すか、Codexの設定を確認してください。メッセージは保存済みで、自動再送していません。",
+                    "Codex Windows protection could not start in the required safe mode. Return to chat-only mode or check the Codex configuration. The message was saved and was not retried.",
+                  ),
+                );
+              }
+              if (workspaceUnavailableFailures.length > 0) {
+                appendSendError(
+                  text(
+                    "選択したCodex作業フォルダーが見つからないか、開くことができません。フォルダーを選び直すか、会話のみに戻してください。メッセージは保存済みで、Codexは起動せず、自動再送していません。",
+                    "The selected Codex workspace is missing or cannot be opened. Choose the folder again or return to chat-only mode. The message was saved, Codex was not started, and nothing was retried.",
+                  ),
+                );
+              }
+              if (workspaceUnsafeLinkFailures.length > 0) {
+                appendSendError(
+                  text(
+                    "選択したCodex作業フォルダーがジャンクションまたはシンボリックリンクに変わったため、安全のため開きませんでした。フォルダーを選び直すか、会話のみに戻してください。メッセージは保存済みで、Codexは起動せず、自動再送していません。",
+                    "The selected Codex workspace became a junction or symbolic link, so it was not opened. Choose the folder again or return to chat-only mode. The message was saved, Codex was not started, and nothing was retried.",
+                  ),
+                );
+              }
+              if (codexUpdateRequiredFailures.length > 0) {
+                appendSendError(
+                  text(
+                    "選択したモデルは、現在のCodexでは利用できません。Codexを最新版へ更新するか、参加者プロフィールで別のモデルを選んでください。今回のAI処理は失敗が確認されており、自動再送していません。",
+                    "The selected model is not available with the current Codex version. Update Codex or choose another model in the participant profile. This AI turn is confirmed failed and was not retried.",
+                  ),
+                );
+              }
+              if (codexConfirmedFailures.length > 0) {
+                appendSendError(
+                  text(
+                    "Codexが今回の処理を失敗終了したことを確認しました。Codexのログイン状態・モデル選択・設定を確認してから、新しいメッセージとして送信してください。自動再送はしていません。",
+                    "Codex confirmed that this turn failed. Check the Codex login, selected model, and settings before sending a new message. It was not retried automatically.",
+                  ),
+                );
+              }
+              if (codexPreflightFailures.length > 0) {
+                appendSendError(
+                  text(
+                    "Codexを開始できなかったため、メッセージはCodexへ届いていません。Codexの起動・ログイン状態・モデル選択・設定を確認し、同じ内容を新しいメッセージとして再送できます。自動再送はしていません。",
+                    "Codex could not start, so the message was not delivered to Codex. Check the Codex installation, login, selected model, and settings, then send the same content as a new message. It was not retried automatically.",
                   ),
                 );
               }
@@ -1172,15 +1720,28 @@ export function useRooms() {
               }
             }
             if (dispatch.unknownRecipients.length > 0) {
-              const names = dispatch.unknownRecipients.map(
+              const cancelled = dispatch.unknownRecipients.filter(
+                ({ code }) => code === "aiDispatchCancelled",
+              );
+              if (cancelled.length > 0) {
+                appendSendNotice(text(
+                  "AI処理を停止しました。依頼はすでにAIへ届いている可能性があります。自動再送していません。",
+                  "The AI turn was stopped. The request may already have reached the AI and was not retried.",
+                ));
+              }
+              const names = dispatch.unknownRecipients
+                .filter(({ code }) => code !== "aiDispatchCancelled")
+                .map(
                 ({ recipientId }) => participants[recipientId]?.displayName ?? recipientId,
               );
-              appendSendError(
-                text(
-                  `${names.join("、")}にはメッセージが届いた可能性があります。二重送信を防ぐため、自動再送していません。`,
-                  `The message may have reached ${names.join(", ")}. It was not retried to prevent a duplicate turn.`,
-                ),
-              );
+              if (names.length > 0) {
+                appendSendError(
+                  text(
+                    `${names.join("、")}にはメッセージが届いた可能性があります。二重送信を防ぐため、自動再送していません。`,
+                    `The message may have reached ${names.join(", ")}. It was not retried to prevent a duplicate turn.`,
+                  ),
+                );
+              }
             }
             const contextNotices = dispatch.contextReports.flatMap((report) => {
               const name = participants[report.participantId]?.displayName ?? report.participantId;
@@ -1221,12 +1782,24 @@ export function useRooms() {
           })
           .finally(() => {
             pendingRecipientIds.delete(participantId);
+            if (participantId === "codex") {
+              setCodexTurnProgress(null);
+            }
             setTypingParticipantId(nextNativeTypingId() ?? (singleGeminiQueued ? "gemini" : null));
           }),
         );
         void Promise.allSettled(dispatches)
           .finally(() => {
-            setAwaitingReply(false);
+            activeTurnRef.current = null;
+            setActiveTurnRoomId(null);
+            if (activeRoomIdRef.current !== roomId) {
+              void deactivateDesktopCommandRoomSession(roomId).catch(() => {
+                // A failed cleanup leaves later command execution fail closed.
+              });
+            }
+            setCodexTurnProgress(null);
+            isCancellingRef.current = false;
+            setCancelling(false);
             setDispatchSafetyRevision((revision) => revision + 1);
           });
         return true;
@@ -1287,6 +1860,48 @@ export function useRooms() {
     return true;
   }
 
+  async function cancelActiveTurn() {
+    const activeTurn = activeTurnRef.current;
+    if (
+      !activeTurn ||
+      activeTurn.roomId !== activeRoom.id ||
+      isCancellingRef.current
+    ) {
+      return false;
+    }
+    isCancellingRef.current = true;
+    stopRequestedRef.current = true;
+    setCancelling(true);
+    setSendError(null);
+    try {
+      const accepted = await cancelDesktopRoomTurn(activeTurn.roomId, activeTurn.messageId);
+      if (!accepted) {
+        isCancellingRef.current = false;
+        stopRequestedRef.current = false;
+        setCancelling(false);
+        setSendError(text(
+          "停止対象を確認できませんでした。処理結果を待ち、自動再送はしません。",
+          "The active turn could not be found. Wait for its result; it will not be retried automatically.",
+        ));
+        return false;
+      }
+      setSendNotice(text(
+        "停止しています…",
+        "Stopping…",
+      ));
+      return true;
+    } catch {
+      isCancellingRef.current = false;
+      stopRequestedRef.current = false;
+      setCancelling(false);
+      setSendError(text(
+        "停止要求を送れませんでした。処理結果を待ち、自動再送はしません。",
+        "The stop request could not be sent. Wait for the result; it will not be retried automatically.",
+      ));
+      return false;
+    }
+  }
+
   async function saveParticipantProfile(profile: ParticipantProfile) {
     setRoomMutationError(null);
     try {
@@ -1306,7 +1921,11 @@ export function useRooms() {
   }
 
   async function resetAiContinuity(participantId: string) {
-    if (isSendingRef.current || roomSourceMode !== "backend") {
+    if (
+      isSendingRef.current ||
+      roomSourceMode !== "backend" ||
+      activeTurnRef.current?.roomId === activeRoom.id
+    ) {
       return false;
     }
     isSendingRef.current = true;
@@ -1342,12 +1961,22 @@ export function useRooms() {
     }
   }
 
+  const visibleRoomWorkspace = workspaceStatusReady
+    ? roomWorkspace
+    : { roomId: activeRoom.id, mode: "chatOnly" as const, folderName: null, available: false };
+  const visibleRoomConductor = conductorStatusReady
+    ? roomConductor
+    : { roomId: activeRoom.id, conductorId: null, sendMode: "direct" as const };
+
   return {
     activeRoom,
+    activeTurnRoomId,
     aiConnections,
+    codexTurnProgress,
     addParticipant,
     availableParticipants,
     backupRooms,
+    chooseBackupDirectory,
     chooseWorkspace,
     changeConductorSendMode,
     clearWorkspace,
@@ -1356,10 +1985,14 @@ export function useRooms() {
     createRoom,
     deleteRoom,
     dismissDispatchSafetyWarning,
+    dismissSendError,
     dispatchSafetyWarning,
     isParticipantMenuOpen,
     isAwaitingReply,
+    isAnotherRoomAwaitingReply,
+    isCancelling,
     isSending,
+    openBackupDirectory,
     participants,
     participantProfiles,
     recipientIds,
@@ -1367,22 +2000,28 @@ export function useRooms() {
     rooms,
     roomSourceMode,
     roomMutationError,
-    roomConductor,
-    roomWorkspace,
+    roomBackupStatus,
+    roomConfigurationReady,
+    roomConductor: visibleRoomConductor,
+    roomRestorePreview,
+    roomWorkspace: visibleRoomWorkspace,
     roomDataMessage,
-    sendError,
-    sendNotice,
+    sendError: sendFeedbackRoomId === activeRoom.id ? sendError : null,
+    sendNotice: sendFeedbackRoomId === activeRoom.id ? sendNotice : null,
     selectedRecipients,
     removeParticipant,
     resetAiContinuity,
     renameRoom,
-    restoreLatestBackup,
+    previewLatestBackup,
+    restorePreviewedBackup,
     saveParticipantProfile,
     selectRoom,
     sendMessage,
+    cancelActiveTurn,
     toggleParticipantMenu: () => setParticipantMenuOpen((isOpen) => !isOpen),
     clearRoomMutationError: () => setRoomMutationError(null),
     toggleRecipient,
     typingParticipantId,
+    useDefaultBackupDirectory,
   };
 }

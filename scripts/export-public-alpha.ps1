@@ -138,8 +138,8 @@ if (-not $cargoVersionMatch.Success) {
 $versionByPath["Cargo.toml"] = $cargoVersionMatch.Groups[1].Value
 
 $releaseVersion = $versionByPath["package.json"]
-if ($releaseVersion -notmatch '^\d+\.\d+\.\d+-alpha\.\d+$') {
-    throw "The committed package.json version is not a supported alpha version: $releaseVersion"
+if ($releaseVersion -notmatch '^\d+\.\d+\.\d+(?:-(?:alpha|rc)\.\d+)?$') {
+    throw "The committed package.json version is not a supported release version: $releaseVersion"
 }
 
 $versionMismatches = @(
@@ -242,7 +242,7 @@ $manifest |
     ConvertTo-Json -Depth 4 |
     Set-Content -LiteralPath $manifestPath -Encoding UTF8
 
-Write-Host "M.I.O. public alpha source snapshot created."
+Write-Host "M.I.O. public release source snapshot created."
 Write-Host "Version: $releaseVersion"
 Write-Host "Source commit: $resolvedCommit"
 Write-Host "Source files: $($actualFiles.Count)"

@@ -1,10 +1,9 @@
 use crate::browser_bridge::{DesktopBrowserBridge, GEMINI_SEARCH_PARTICIPANT_ID};
 use crate::claude_fable::ClaudeFableAdapter;
+use crate::codex_app_server::CodexAppServerAdapter;
 use crate::gemini_antigravity::GeminiAntigravityAdapter;
 use crate::grok_cli::GrokCliAdapter;
 use serde::Serialize;
-use std::env;
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tauri::State;
 
@@ -38,50 +37,10 @@ pub(crate) struct AiConnectionStatusSuccess {
     connections: Vec<AiConnectionStatus>,
 }
 
-fn is_explicit_launcher(value: Option<std::ffi::OsString>) -> bool {
-    value.is_some_and(|value| !value.is_empty())
-}
-
-fn product_codex_available() -> bool {
-    if is_explicit_launcher(env::var_os("MOE_CODEX_BIN")) {
-        return true;
-    }
-    if env::var_os("MOE_CODEX_CLI_JS").is_some_and(|path| Path::new(&path).is_file()) {
-        return true;
-    }
-    if let Some(app_data) = env::var_os("APPDATA") {
-        let cli = PathBuf::from(app_data)
-            .join("npm")
-            .join("node_modules")
-            .join("@openai")
-            .join("codex")
-            .join("bin")
-            .join("codex.js");
-        if cli.is_file() {
-            return true;
-        }
-    }
-    command_on_path("codex")
-}
-
-fn command_on_path(name: &str) -> bool {
-    let Some(path) = env::var_os("PATH") else {
-        return false;
-    };
-    env::split_paths(&path).any(|directory| {
-        [
-            name.to_owned(),
-            format!("{name}.exe"),
-            format!("{name}.cmd"),
-        ]
-        .into_iter()
-        .any(|candidate| directory.join(candidate).is_file())
-    })
-}
-
 #[allow(clippy::too_many_arguments)]
 fn connection_statuses(
-    codex_available: bool,
+    codex_installed: bool,
+    codex_live_response_seen: bool,
     claude_code_installed: bool,
     claude_live_response_seen: bool,
     grok_installed: bool,
@@ -95,18 +54,24 @@ fn connection_statuses(
     vec![
         AiConnectionStatus {
             participant_id: CODEX_PARTICIPANT_ID,
-            state: if codex_available {
+            state: if codex_live_response_seen {
                 AiConnectionState::Ready
+            } else if codex_installed {
+                AiConnectionState::Installed
             } else {
                 AiConnectionState::SetupRequired
             },
-            label: if codex_available {
+            label: if codex_live_response_seen {
                 "利用可能"
+            } else if codex_installed {
+                "実行環境あり・初回送信待ち"
             } else {
                 "設定が必要"
             },
-            detail: if codex_available {
-                "Codex App Serverを利用できます。"
+            detail: if codex_live_response_seen {
+                "Codex App Serverの実応答を確認済みです。"
+            } else if codex_installed {
+                "Codexの実行環境は検出済みです。接続状態は最初の実回答で確認します。"
             } else {
                 "Codexの実行環境を検出できません。"
             },
@@ -128,9 +93,9 @@ fn connection_statuses(
                 "CLI設定が必要"
             },
             detail: if claude_live_response_seen {
-                "Claude CodeのFable 5による会話専用応答を確認済みです。Fableへ送った内容はAnthropicで30日保持されます。"
+                "Claude Codeの会話専用応答を確認済みです。Claudeへ送った内容はAnthropicで30日保持されます。"
             } else if claude_code_installed {
-                "Claude Codeは検出済みです。必要時だけ非表示で起動して返答後に終了します。Fableへ送った内容はAnthropicで30日保持されます。"
+                "Claude Codeは検出済みです。必要時だけ非表示で起動して返答後に終了します。Claudeへ送った内容はAnthropicで30日保持されます。"
             } else {
                 "Claude Codeの実行環境を検出できません。"
             },
@@ -204,7 +169,7 @@ fn connection_statuses(
                 "CLI設定が必要"
             },
             detail: if grok_live_response_seen {
-                "Grok CLIの会話専用応答を確認済みです。"
+                "Grok CLIの実応答を確認済みです。会話のほか、選択時は追跡済みGit差分を読取専用でレビューできます。"
             } else if grok_installed {
                 "Grok CLIは検出済みです。接続状態は最初の実回答で確認します。"
             } else {
@@ -235,6 +200,7 @@ fn connection_statuses(
 #[tauri::command]
 pub(crate) fn desktop_ai_connection_status(
     browser_bridge: State<'_, Arc<DesktopBrowserBridge>>,
+    codex: State<'_, Arc<CodexAppServerAdapter>>,
     claude_fable: State<'_, Arc<ClaudeFableAdapter>>,
     grok_cli: State<'_, Arc<GrokCliAdapter>>,
     gemini_cli: State<'_, Arc<GeminiAntigravityAdapter>>,
@@ -242,7 +208,8 @@ pub(crate) fn desktop_ai_connection_status(
     AiConnectionStatusSuccess {
         ok: true,
         connections: connection_statuses(
-            product_codex_available(),
+            codex.installed(),
+            codex.live_response_seen(),
             claude_fable.installed(),
             claude_fable.live_response_seen(),
             grok_cli.installed(),
@@ -270,7 +237,7 @@ mod tests {
     #[test]
     fn keeps_claude_code_and_claude_web_as_separate_connections() {
         let statuses = connection_statuses(
-            true, true, false, true, false, false, false, true, true, true,
+            true, true, true, false, true, false, false, false, true, true, true,
         );
 
         assert_eq!(status(&statuses, "codex").state, AiConnectionState::Ready);
@@ -291,7 +258,7 @@ mod tests {
     #[test]
     fn never_claims_claude_code_is_connected_from_cli_detection_alone() {
         let statuses = connection_statuses(
-            false, true, false, true, false, false, false, true, true, false,
+            false, false, true, false, true, false, false, false, true, true, false,
         );
 
         assert_eq!(
@@ -305,9 +272,32 @@ mod tests {
     }
 
     #[test]
+    fn codex_requires_a_live_reply_before_reporting_ready() {
+        let installed = connection_statuses(
+            true, false, false, false, false, false, false, false, false, false, false,
+        );
+        assert_eq!(
+            status(&installed, CODEX_PARTICIPANT_ID).state,
+            AiConnectionState::Installed
+        );
+        assert_eq!(
+            status(&installed, CODEX_PARTICIPANT_ID).label,
+            "実行環境あり・初回送信待ち"
+        );
+
+        let ready = connection_statuses(
+            true, true, false, false, false, false, false, false, false, false, false,
+        );
+        assert_eq!(
+            status(&ready, CODEX_PARTICIPANT_ID).state,
+            AiConnectionState::Ready
+        );
+    }
+
+    #[test]
     fn claude_code_requires_a_live_fable_reply_before_reporting_ready() {
         let installed = connection_statuses(
-            true, true, false, true, false, false, false, false, false, false,
+            true, true, true, false, true, false, false, false, false, false, false,
         );
         assert_eq!(
             status(&installed, CLAUDE_CODE_PARTICIPANT_ID).state,
@@ -315,7 +305,7 @@ mod tests {
         );
 
         let ready = connection_statuses(
-            true, true, true, true, false, false, false, false, false, false,
+            true, true, true, true, true, false, false, false, false, false, false,
         );
         assert_eq!(
             status(&ready, CLAUDE_CODE_PARTICIPANT_ID).state,
@@ -326,7 +316,7 @@ mod tests {
     #[test]
     fn reports_gemini_ready_only_after_the_browser_extension_is_seen() {
         let waiting = connection_statuses(
-            true, true, false, true, false, false, false, true, true, false,
+            true, true, true, false, true, false, false, false, true, true, false,
         );
         assert_eq!(
             status(&waiting, GEMINI_SEARCH_PARTICIPANT_ID).state,
@@ -334,7 +324,7 @@ mod tests {
         );
 
         let connected = connection_statuses(
-            true, true, false, true, false, false, false, true, true, true,
+            true, true, true, false, true, false, false, false, true, true, true,
         );
         assert_eq!(
             status(&connected, GEMINI_SEARCH_PARTICIPANT_ID).state,
@@ -345,7 +335,7 @@ mod tests {
     #[test]
     fn normal_product_keeps_the_browser_experiment_disabled() {
         let statuses = connection_statuses(
-            true, true, false, true, false, false, false, false, false, false,
+            true, true, true, false, true, false, false, false, false, false, false,
         );
         let gemini = status(&statuses, GEMINI_SEARCH_PARTICIPANT_ID);
 
@@ -356,7 +346,7 @@ mod tests {
     #[test]
     fn grok_requires_a_live_reply_before_reporting_ready() {
         let installed = connection_statuses(
-            true, true, false, true, false, false, false, false, false, false,
+            true, true, true, false, true, false, false, false, false, false, false,
         );
         assert_eq!(
             status(&installed, GROK_PARTICIPANT_ID).state,
@@ -364,7 +354,7 @@ mod tests {
         );
 
         let ready = connection_statuses(
-            true, true, false, true, true, false, false, false, false, false,
+            true, true, true, false, true, true, false, false, false, false, false,
         );
         assert_eq!(
             status(&ready, GROK_PARTICIPANT_ID).state,
@@ -375,7 +365,7 @@ mod tests {
     #[test]
     fn antigravity_cli_takes_priority_over_the_browser_experiment() {
         let installed = connection_statuses(
-            true, true, false, true, false, true, false, true, true, true,
+            true, true, true, false, true, false, true, false, true, true, true,
         );
         assert_eq!(
             status(&installed, GEMINI_SEARCH_PARTICIPANT_ID).state,
@@ -383,7 +373,7 @@ mod tests {
         );
 
         let ready = connection_statuses(
-            true, true, false, true, false, true, true, false, false, false,
+            true, true, true, false, true, false, true, true, false, false, false,
         );
         assert_eq!(
             status(&ready, GEMINI_SEARCH_PARTICIPANT_ID).state,

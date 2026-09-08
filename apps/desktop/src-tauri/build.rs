@@ -1,4 +1,6 @@
 fn main() {
+    println!("cargo:rerun-if-env-changed=MOE_BUNDLED_COMMAND_HELPER_SHA256");
+
     #[cfg(windows)]
     {
         let manifest = std::path::Path::new("windows-common-controls-v6.manifest")

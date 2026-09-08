@@ -18,6 +18,7 @@ import {
   type ArtworkPlacement,
 } from "../artwork";
 import { ArtworkCanvas } from "../components/ArtworkCanvas";
+import { useContextMenuPolicy } from "../useContextMenuPolicy";
 
 type DragState = {
   pointerId: number;
@@ -47,6 +48,7 @@ function sliderValueToScale(value: number) {
 }
 
 export function ArtworkEditorApp() {
+  useContextMenuPolicy();
   const [request, setRequest] = useState<ArtworkEditorRequest | null>(null);
   const [placement, setPlacement] = useState(defaultArtworkPlacement);
   const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
@@ -123,8 +125,17 @@ export function ArtworkEditorApp() {
     isFinishingRef.current = true;
     try {
       await emitTo("main", eventName, payload);
+    } catch {
+      // The main window also observes this window being destroyed and treats
+      // a missing apply/cancel event as a safe cancellation.
     } finally {
-      await getCurrentWindow().destroy();
+      try {
+        await getCurrentWindow().destroy();
+      } catch {
+        // If destruction fails, let the user retry instead of leaving every
+        // editor action permanently ignored.
+        isFinishingRef.current = false;
+      }
     }
   }
 

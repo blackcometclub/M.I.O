@@ -236,9 +236,26 @@ Partner Centerで認定済みのSubmission 5を再確認し、「今すぐ公開
   `Core + Room ready`を表示した。[再起動直後の実画面](assets/screenshots/mio-store-1.0.5-room-after-restart.png)を保存した。
 - AIへの送信、新規Room作成、backup復元、通常版の起動は行っていない。確認後はStore版を通常終了した。
 
-## 次の確認
+## 2026-09-09 GitHub v1.0.5公開
 
-1. 1.0.5の公開とStore署名版の実機確認は完了。次期versionの作業は`NEXT-VERSION-NOTES.md`から再開する。
+10:56 JST、公開repositoryへsource-onlyの通常Release `v1.0.5`を公開した。
+
+- private source commitは`c6631dd301312c19a8ef0cd6d692c8866c55f443`、public release commitは
+  `887a6a1dd2478fc590784a5ba78f8a66278e4da6`。public `main`とannotated tagをatomic pushした。
+- 公開snapshotは397ファイル。public commitの全blobを準備済みsnapshotと照合し、397件すべて一致した。
+- source ZIP `mio-v1.0.5-source.zip`は7,956,967 bytes、SHA-256は
+  `E2BE040569C0525DBAE1C4DDAA620D175C1DD5C4565AF0DE3787E26703C40725`。
+- source ZIP、`snapshot-manifest.json`、`SHA256SUMS.txt`の3点を添付した。未署名installerは添付していない。
+- Releaseは`draft: false`、`prerelease: false`。匿名GitHub APIでLatest `v1.0.5`を取得し、
+  3添付物を認証なしでdownloadしてlocal hashと全件一致した。
+- [`v1.0.5` Release](https://github.com/blackcometclub/M.I.O/releases/tag/v1.0.5)
+- 公開直後のDependabot APIは旧`fast-uri`／`qs`警告を残していた。公開lockfileは修正版なので、
+  server側の再解析後に再確認する。`glib`はWindows targetの依存に含まれないため、根拠なくdismissしない。
+
+## 完了後の扱い
+
+1. 1.0.5の公開と通常版／Store署名版の実機確認は完了。現在残っている作業と追加機能候補は
+   [現在地カード](CURRENT-STATUS-CARD.md)から再開する。
 
 通常版NSISとStore署名版の両方で、1.0.5への更新・再起動・Room復帰を確認済み。
 候補rootの`candidate-manifest.json`と`validation.json`は準備時点の記録として保持し、

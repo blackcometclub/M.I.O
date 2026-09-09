@@ -30,7 +30,8 @@ Conversation data and the backup format are unchanged.
 - BOOTH: 商品名とdownload対象を1.0.5へ更新し、上記日本語の履歴を追加済み。
 - itch.io: download対象を1.0.5へ更新し、上記英語を商品説明とDevlogへ追加済み。過去のDevlogを保持した。
 - Microsoft Store: `1.0.5.0`のSubmission 5が認定・公開処理を完了し、Storeで入手可能な状態を確認済み。
-- GitHub: 公開対象sourceの差分とscanを確認してから`v1.0.5`のReleaseを準備する。
+- GitHub: source-onlyの通常Release [`v1.0.5`](https://github.com/blackcometclub/M.I.O/releases/tag/v1.0.5)を公開済み。
+  source ZIP、snapshot manifest、SHA256SUMSの3点を添付し、未署名installerは添付していない。
 
 直接配布の案内には、既存方針に従って「未署名Preview / Unsigned Preview」、
 Windowsの警告が出る場合があること、installerのSHA-256とsource commitを併記する。

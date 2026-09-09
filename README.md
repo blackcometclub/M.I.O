@@ -14,6 +14,7 @@
 - [Microsoft Store](https://apps.microsoft.com/detail/9NS9B7T71XHN) — recommended signed package
 - [BOOTH](https://tinmoon.booth.pm/items/8807279) — free ZIP with optional support; unsigned preview
 - [itch.io](https://tinmoon-label.itch.io/mio-talk-room) — free/pay-what-you-want unsigned preview installer
+- [GitHub v1.0.5](https://github.com/blackcometclub/M.I.O/releases/tag/v1.0.5) — history-free source ZIP and checksums
 - [What's new in v1.0.5](https://tinmoon-label-site.pages.dev/en/works/mio/#release-notes) — release notes in English
 
 The published [alpha.2 Release](https://github.com/blackcometclub/M.I.O/releases/tag/v0.1.0-alpha.2)

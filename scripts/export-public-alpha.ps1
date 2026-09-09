@@ -18,6 +18,7 @@ $excludedPaths = @(
     "docs/HANDOFF_2026-08-18_PUBLIC_ALPHA_NO_CLI.md"
     "docs/HANDOFF_2026-08-27_POST_RELEASE_SOURCE_SMOKE.md"
     "docs/CURRENT-STATUS-CARD.md"
+    "docs/HANDOFF_2026-09-09_GITHUB_V105_PUBLISHED.md"
 )
 
 function Invoke-RepositoryGit {

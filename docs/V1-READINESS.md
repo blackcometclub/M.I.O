@@ -3,7 +3,7 @@
 - Status: 1.0.5公開後記録（包括的な旧V1基準には未完項目あり）
 - Date: 2026-09-04
 - Last verified: 2026-09-09（Store `1.0.5.0`公開・実機更新、直接配布 `1.0.5`）
-- Current release: Store `1.0.5.0`／直接配布 `1.0.5`／GitHub `v1.0.4`
+- Current release: Store `1.0.5.0`／直接配布 `1.0.5`／GitHub `v1.0.5`
 - Original target: Windows x64向けの一般公開安定版 `v1.0.0`
 - Starting point: `v0.1.0-alpha.2`
 - Rule: 未確認項目を推測で完了にしない
@@ -12,7 +12,8 @@
 
 [現在地カード](CURRENT-STATUS-CARD.md)を最新の未完了一覧とする。
 Store、TINMOON、BOOTH、itch.ioの1.0.5公開と、通常版／Store署名版のRoom自動復帰は確認済み。
-Sandbox AI試験はOwner指定で省略した。公開GitHubの`v1.0.5`は未公開で、次の公開残件として現在地カードへ記録する。
+公開GitHubのsource-only通常Release `v1.0.5`も2026-09-09 10:56 JSTに公開し、匿名取得を確認した。
+Sandbox AI試験はOwner指定で省略した。
 詳細は[1.0.5の公開・確認結果](RELEASE-1.0.5-PREPARATION.md)を参照。
 
 以下は時系列の証拠と当初の包括的なV1基準である。各日付の「未確認」はその時点の状態であり、

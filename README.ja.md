@@ -14,6 +14,7 @@
 - [Microsoft Store](https://apps.microsoft.com/detail/9NS9B7T71XHN) — 推奨する署名済みpackage
 - [BOOTH](https://tinmoon.booth.pm/items/8807279) — 無料・支援任意の未署名Preview ZIP
 - [itch.io](https://tinmoon-label.itch.io/mio-talk-room) — 無料／支援任意の未署名Preview installer
+- [GitHub v1.0.5](https://github.com/blackcometclub/M.I.O/releases/tag/v1.0.5) — 履歴なしsource ZIPとchecksum
 - [v1.0.5の更新履歴](https://tinmoon-label-site.pages.dev/works/mio/#release-notes) — 日本語の変更内容
 
 公開済みの[alpha.2 Release](https://github.com/blackcometclub/M.I.O/releases/tag/v0.1.0-alpha.2)と

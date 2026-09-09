@@ -3,7 +3,7 @@
 **English** | [日本語](USER-GUIDE.ja.md)
 
 This guide describes the public Windows V1 line. The signed Microsoft Store package is the recommended
-installation. BOOTH and itch.io provide a separate unsigned `v1.0.3` preview for people who deliberately
+installation. BOOTH and itch.io provide a separate unsigned `v1.0.5` preview for people who deliberately
 choose direct download. A locally built installer is not an official storefront download.
 
 ## 1. Requirements
@@ -24,7 +24,7 @@ Windows 10, Windows on Arm, 32-bit Windows, macOS, and Linux are not supported b
    **Unsigned Preview**. Compare the SHA-256 shown on the same storefront page before running the installer:
 
    ```powershell
-   Get-FileHash .\M.I.O_1.0.3_windows-x64_unsigned-preview_setup.exe -Algorithm SHA256
+   Get-FileHash .\M.I.O_1.0.5_windows-x64_unsigned-preview_setup.exe -Algorithm SHA256
    ```
 
 3. A Microsoft Store installation is signed through Microsoft Store. The BOOTH/itch.io preview has no

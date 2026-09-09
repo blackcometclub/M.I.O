@@ -3,7 +3,7 @@
 [English](USER-GUIDE.md) | **日本語**
 
 この文書は一般公開済みのWindows V1系を対象にしています。推奨する導入方法は署名済みのMicrosoft Store版です。
-BOOTH／itch.ioでは、直接downloadを明示的に選ぶ利用者向けに、別配布の未署名`v1.0.3` Previewを提供しています。
+BOOTH／itch.ioでは、直接downloadを明示的に選ぶ利用者向けに、別配布の未署名`v1.0.5` Previewを提供しています。
 ローカルでbuildしたinstallerは公式storefrontのdownloadではありません。
 
 ## 1. 動作条件
@@ -24,7 +24,7 @@ Windows 10、Windows on Arm、32-bit Windows、macOS、LinuxはV1の対応対象
    **未署名Preview**として配布しています。実行前に、同じstorefront pageに記載されたSHA-256と照合します。
 
    ```powershell
-   Get-FileHash .\M.I.O_1.0.3_windows-x64_unsigned-preview_setup.exe -Algorithm SHA256
+   Get-FileHash .\M.I.O_1.0.5_windows-x64_unsigned-preview_setup.exe -Algorithm SHA256
    ```
 
 3. Microsoft Store版はStore経由で署名されます。BOOTH／itch.io版にはAuthenticode発行者がなく、

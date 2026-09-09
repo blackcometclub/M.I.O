@@ -5,16 +5,16 @@
 **M.I.O. (Malevolent Immortal Overdrive)** は、複数のAIをひとつのTalk Roomへ集め、直接会話または指揮者モードで協働させるWindows向けローカル優先デスクトップアプリです。
 
 > [!IMPORTANT]
-> **M.I.O. v1.0.4は一般公開済みです。** Microsoft Storeでは署名済み`1.0.4.0`を配布中です
-> （2026年9月8日に公開済みと確認）。BOOTH／itch.ioでは9月7日に公開した、別配布の未署名
-> `1.0.4` Previewを入手できます。現在のsource versionも`1.0.4`です。
-> 公開アプリのbuild元は`fbc81b89ee64a670f13128487c06a96bfabe3238`です。
+> **M.I.O. v1.0.5は一般公開済みです。** Microsoft Storeでは署名済み`1.0.5.0`を配布中です
+> （2026年9月9日に公開・実機更新済みと確認）。BOOTH／itch.ioでは同日に公開した、別配布の未署名
+> `1.0.5` Previewを入手できます。現在のsource versionも`1.0.5`です。
+> 公開アプリのbuild元は`3076294e1d87821afd1e18f36420d9162820679e`です。
 > その後の公開案内の文書更新によって、アプリ本体のコードは変わっていません。
 
 - [Microsoft Store](https://apps.microsoft.com/detail/9NS9B7T71XHN) — 推奨する署名済みpackage
 - [BOOTH](https://tinmoon.booth.pm/items/8807279) — 無料・支援任意の未署名Preview ZIP
 - [itch.io](https://tinmoon-label.itch.io/mio-talk-room) — 無料／支援任意の未署名Preview installer
-- [v1.0.4の更新履歴](https://tinmoon-label-site.pages.dev/works/mio/#release-notes) — 日本語の変更内容
+- [v1.0.5の更新履歴](https://tinmoon-label-site.pages.dev/works/mio/#release-notes) — 日本語の変更内容
 
 公開済みの[alpha.2 Release](https://github.com/blackcometclub/M.I.O/releases/tag/v0.1.0-alpha.2)と
 それ以前のreleaseは、履歴として変更せず固定しています。旧tagやassetをV1用に差し替えず、

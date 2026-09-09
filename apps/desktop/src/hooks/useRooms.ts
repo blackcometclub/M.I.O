@@ -63,6 +63,7 @@ import type {
   RoomWorkspaceStatus,
 } from "../types";
 import { useUiPreferences } from "../uiPreferences";
+import { readRememberedRoomId, rememberRoomId, resolveSelectedRoom } from "../roomSelection";
 
 export type RoomSourceMode = "loading" | "backend" | "browserDemo" | "error";
 
@@ -138,7 +139,10 @@ export function useRooms() {
   const [canonicalParticipants, setCanonicalParticipants] = useState<ParticipantMap>(demoParticipants);
   const [participantProfiles, setParticipantProfiles] = useState<Record<string, ParticipantProfile>>({});
   const [aiConnections, setAiConnections] = useState<AiConnectionMap>({});
-  const [activeRoomId, setActiveRoomId] = useState(initialRooms[0].id);
+  const [activeRoomId, setActiveRoomId] = useState(() =>
+    readRememberedRoomId("__TAURI_INTERNALS__" in window ? "backend" : "browserDemo")
+      ?? initialRooms[0].id,
+  );
   const [recipientIds, setRecipientIds] = useState(initialRecipientIds);
   const [isParticipantMenuOpen, setParticipantMenuOpen] = useState(false);
   const [typingParticipantId, setTypingParticipantId] = useState<string | null>(null);
@@ -212,8 +216,16 @@ export function useRooms() {
   const roomConfigurationReady = workspaceStatusReady && conductorStatusReady;
 
   useEffect(() => {
-    activeRoomIdRef.current = activeRoom.id;
-  }, [activeRoom.id]);
+    activeRoomIdRef.current = activeRoomId;
+  }, [activeRoomId]);
+
+  useEffect(() => {
+    // Loading/error screens may show a bundled placeholder Room. Never let that
+    // placeholder overwrite the selection before the saved catalog is available.
+    if (roomSourceMode === "backend" || roomSourceMode === "browserDemo") {
+      rememberRoomId(roomSourceMode, activeRoom.id);
+    }
+  }, [activeRoom.id, roomSourceMode]);
 
   const roomParticipants = useMemo(
     () =>
@@ -234,8 +246,30 @@ export function useRooms() {
   );
 
   useEffect(() => {
+    function applyInitialRooms(
+      hydration: { rooms: Room[]; participants: ParticipantMap },
+      mode: "backend" | "browserDemo",
+    ) {
+      const nextRoom = resolveSelectedRoom(hydration.rooms, activeRoomIdRef.current);
+      setCanonicalParticipants((current) => ({ ...current, ...hydration.participants }));
+      setRooms(hydration.rooms);
+      if (nextRoom) {
+        const firstAi = nextRoom.participantIds.find(
+          (id) => hydration.participants[id]?.kind === "ai",
+        );
+        const nextRecipients = directRecipientIdsRef.current[nextRoom.id]?.filter(
+          (id) => nextRoom.participantIds.includes(id),
+        ) ?? (firstAi ? [firstAi] : []);
+        directRecipientIdsRef.current[nextRoom.id] = nextRecipients;
+        activeRoomIdRef.current = nextRoom.id;
+        setActiveRoomId(nextRoom.id);
+        setRecipientIds(nextRecipients);
+      }
+      setRoomSourceMode(mode);
+    }
+
     if (!("__TAURI_INTERNALS__" in window)) {
-      setRoomSourceMode("browserDemo");
+      applyInitialRooms({ rooms: initialRooms, participants: demoParticipants }, "browserDemo");
       return;
     }
 
@@ -245,14 +279,7 @@ export function useRooms() {
         if (cancelled) {
           return;
         }
-        setCanonicalParticipants((current) => ({ ...current, ...hydration.participants }));
-        setRooms(hydration.rooms);
-        setActiveRoomId((current) =>
-          hydration.rooms.some((room) => room.id === current)
-            ? current
-            : hydration.rooms[0]?.id ?? current,
-        );
-        setRoomSourceMode("backend");
+        applyInitialRooms(hydration, "backend");
       })
       .catch(() => {
         if (!cancelled) {
@@ -1225,7 +1252,7 @@ export function useRooms() {
       const result = await restoreDesktopRoomBackup(confirmedPreview.fileName);
       restoreCompleted = true;
       const hydration = await readDesktopRooms();
-      const nextRoom = hydration.rooms[0];
+      const nextRoom = resolveSelectedRoom(hydration.rooms, previousRoomId);
       const firstAi = nextRoom?.participantIds.find(
         (id) => hydration.participants[id]?.kind === "ai",
       );

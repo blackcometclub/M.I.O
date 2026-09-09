@@ -2427,21 +2427,21 @@ dependencies = [
 
 [[package]]
 name = "moe-adapter-sdk"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "moe-protocol",
 ]
 
 [[package]]
 name = "moe-command-broker"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "semver",
 ]
 
 [[package]]
 name = "moe-command-helper"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "moe-command-broker",
  "moe-command-helper-protocol",
@@ -2451,7 +2451,7 @@ dependencies = [
 
 [[package]]
 name = "moe-command-helper-protocol"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "moe-command-broker",
  "serde",
@@ -2460,14 +2460,14 @@ dependencies = [
 
 [[package]]
 name = "moe-command-runner"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "moe-command-broker",
 ]
 
 [[package]]
 name = "moe-core"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "moe-protocol",
  "serde",
@@ -2476,14 +2476,14 @@ dependencies = [
 
 [[package]]
 name = "moe-credential-store"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "windows-sys 0.61.2",
 ]
 
 [[package]]
 name = "moe-desktop"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "axum",
  "base64 0.22.1",
@@ -2519,14 +2519,14 @@ dependencies = [
 
 [[package]]
 name = "moe-git-status-broker"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "git2",
 ]
 
 [[package]]
 name = "moe-mcp"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "moe-core",
  "moe-protocol",
@@ -2536,7 +2536,7 @@ dependencies = [
 
 [[package]]
 name = "moe-protocol"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "serde",
  "serde_json",
@@ -2544,14 +2544,14 @@ dependencies = [
 
 [[package]]
 name = "moe-relay-client"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "moe-credential-store",
 ]
 
 [[package]]
 name = "moe-relay-transport"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "moe-credential-store",
  "moe-protocol",
@@ -2565,7 +2565,7 @@ dependencies = [
 
 [[package]]
 name = "moe-rust-relay-pairing-spike"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "moe-credential-store",
  "moe-desktop",
@@ -2576,7 +2576,7 @@ dependencies = [
 
 [[package]]
 name = "moe-windows-appcontainer-workspace-spike"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "moe-command-broker",
  "moe-command-helper-protocol",
@@ -2586,7 +2586,7 @@ dependencies = [
 
 [[package]]
 name = "moe-windows-command-launcher"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "moe-command-broker",
  "moe-command-helper-protocol",
@@ -2595,7 +2595,7 @@ dependencies = [
 
 [[package]]
 name = "moe-windows-command-runner"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "moe-command-broker",
  "moe-command-runner",
@@ -2604,14 +2604,14 @@ dependencies = [
 
 [[package]]
 name = "moe-windows-credential-store-spike"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "moe-credential-store",
 ]
 
 [[package]]
 name = "moe-workspace-broker"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "cap-fs-ext",
  "cap-std",

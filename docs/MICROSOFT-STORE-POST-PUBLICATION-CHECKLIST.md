@@ -4,6 +4,13 @@
 公開ページ、Store版の取得、Windows 11実機、既存Room data、レーベルサイトを
 順番に確認するための手順である。
 
+## 最新の整理
+
+2026-09-08 16:04 JST時点の完了・省略・次期対応とGitHub警告の照合結果は、
+[1.0.4公開後確認の整理](RELEASE-1.0.4-CLOSEOUT.md)を参照。
+今回合意した公開後確認は完了し、SandboxはOwner依頼で終了済み。AI試験の省略とRoom自動復帰の次期版繰越を含むため、
+本書の元の全項目基準を一括PASSには変更しない。以下の過去の「残り」は各記録時点の状態である。
+
 ## 固定情報
 
 - 製品名: `M.I.O`
@@ -307,6 +314,154 @@ commit、push、Cloudflare Pages deployは別々に結果を確認し、deploy�
 成功し、日英公開ページのHTTP 200・新旧履歴・版数を確認した。BOOTHとitch.ioにも`1.0.4`の7項目と
 Store公開済み案内を揃え、公開本文を非login browserで確認した。上記のサイト旧表記の課題は解消した。
 未実施の実機smokeやclean環境試験は残るため、全体のPARTIAL判定は維持する。
+
+同日13:50 JST、Owner確認後にGitHubの[通常Release v1.0.4](https://github.com/blackcometclub/M.I.O/releases/tag/v1.0.4)
+を公開した。public source commitは`1376ec45771c3d73553c823f5cdbc6b6645cb549`。Store版への案内と
+source ZIP／manifest／SHA256SUMSの3添付物を掲載し、匿名の実downloadとSHA-256一致を確認した。
+Latestも`v1.0.4`となり、上記のGitHub Release未作成の課題は解消した。
+
+### 2026-09-08 14:39–14:43 JSTの実機smokeと配布確認
+
+- **対象**: 登録packageは`TINMOON.M.I.O_1.0.4.0_x64__kk3nwjsrdvfmr`、`SignatureKind: Store`、
+  `Status: Ok`。実行processも同じWindowsApps配下の`mio-desktop.exe`だった。
+- **画面で確認**: `M.I.O.開発室`から既存の`MCP実験室`へ切り替え、元のRoomと会話表示へ戻った。
+  Room settingsとPreferences／外観panelの開閉、Room一覧の開閉、画像表示／画像なし表示の往復を確認した。
+  最後は元のRoom、Room一覧あり、画像なし表示へ戻した。Provider設定やworkspace権限は変更していない。
+- **Store側backup**: Room settingsの保存先は`D:\Documents\M.O.E Backups`。
+  `Back up`を1回実行して`Backed up 4 rooms`を確認した。生成fileは
+  `D:\Documents\M.O.E Backups\moe-room-backup-00000001788846045519.json`、3,459 bytes／4 Room／7 message。
+  SHA-256は`3D46A20C466A3E7514D42B08A69D309A58602D7A1E840C20AD1F597670171C1E`で、
+  同日午前に保全したStore snapshotとbyte-identicalだった。全data領域のbackupではなくRoom backupである。
+  通常contextのsnapshotも`999EB1B0F560E60080DEA7A4317C83D7FD2FE3C02F672FE2F453E308068F2B0A`を確認した。
+- **終了・再起動**: windowの通常終了後、本体とhelperのprocess不在を確認した。登録済みStore app IDで
+  再起動し、新processが同じStore package配下から動くことと、元のRoom・会話・画像なし表示の保持を実画面で確認した。
+  再起動後の追加backupを準備する際にuser入力が検知されたため、以後のnative操作を中止し、操作sessionをresetした。
+  再起動後のbackup再取得・hash比較は未実施。アプリは再起動した状態で残している。
+- **証拠の制限**: 最初のoccluded window captureは別画面を示したため採用せず、対象を再選択・前面化した後の
+  M.I.O. screenshotだけをsmoke証拠とした。UI Automationのaccessibilityはnullで、実画面と座標による確認だった。
+- **配布取得**: itch.ioは非login browserで`No thanks, just take me to the downloads`から無料取得画面へ進み、
+  `1.0.4` installerのDownloadを実行したが保存fileは確認できず、取得・hash照合は未完了。
+  BOOTHは非login時にlogin画面へ遷移した。既存loginのEdgeで公開商品の無料downloadを実行したところ、
+  `s6.booth.pm`で`このページは Microsoft Edge によってブロックされました`／`ERR_BLOCKED_BY_CLIENT`となった。
+  ブロック原因は未特定で、解除や別経路による回避は行っていない。確認用に作成した3 tabは閉じた。
+- **残り**: 実download・hash照合、Codex Direct実reply、Provider設定・権限保持の全確認、clean Windows 11と
+  WebView2なし環境の試験。実Provider送信、課金、workspace書込み、install／uninstallは今回実施していない。
+  最小smokeの表示操作は確認できたが、全体の**PARTIAL**判定を維持する。
+
+### 2026-09-08 14:51 JSTの配布取得再確認
+
+Ownerの再試行依頼により、既存loginのEdgeで両公開ページの無料downloadを再実行した。
+downloadイベントの監視を併用し、Windowsの既定download先が`D:\Downloads`であることを確認した。
+
+- **BOOTH: 取得・照合PASS**。公開商品の無料downloadから
+  `D:\Downloads\M.I.O_1.0.4_windows-x64_unsigned-preview.zip`を取得した。
+  4,500,699 bytes／SHA-256 `06D8F4262DBAE3BF1D43590D6AB1E38232EAF452528BF9163F1D1F32D218F9A1`で、
+  公開前のlocal原本と掲載値に一致した。今回はブロックは再現せず、設定変更・警告解除はしていない。
+  前回のブロック原因自体は確定していない。
+- **itch.io: 受信bytesの照合PASS、browser保存完了は保留**。支援金なしの取得経路で
+  `D:\Downloads\未確認 915836.crdownload`が生成された。
+  4,516,598 bytes／SHA-256 `5BEBA29831175941B8977DC9E1F7FC0BB3B75B91A01922C88EEF7919330C7B19`で、
+  公開前のinstaller原本と掲載値に一致した。BOOTH ZIP内のinstallerもstreamでhashし、同じ値だった。
+  一時fileのrename・実行はしていない。ダウンロード一覧の`edge://downloads/`はbrowser toolのURL policyで
+  拒否されたため別経路で操作せず、OwnerにCtrl+Jで表示文言を確認するよう依頼した。
+  実際の警告内容・保存保留理由は未確認であり、SmartScreen等が原因と断定しない。
+- 読取り照合結果は`.tools/public-release-prep/1.0.4/download-recheck-20260908-1451/verification.json`。
+  前回の「両方とも受信file未確認」はこの再検証で解消した。両媒体の配布bytesは原本と一致するが、
+  itch.ioの通常file名での保存完了と、実Provider／clean環境試験は未完了である。
+
+### 2026-09-08 Owner提示のダウンロード警告
+
+Ownerのスクリーンショットで、itch.ioのinstallerに対してEdgeが
+`一般的にダウンロードされていません`／`開く前に、信頼できることを確認してください`と表示していることを確認した。
+これで保存保留時の実際の表示が判明した。この表示をmalware検出通知とは扱わない。
+配布bytesの原本一致は前項で確認済み。通常file名への保存完了や警告解除・実行は確認していない。
+
+### 2026-09-08 15:08–15:11 JSTのStore版Codex Direct試験
+
+- Ownerの再開依頼後、Store `1.0.4.0`の新規Room `New room 5`
+  （`room-3169414b-3ec1-432b-b6c9-f8a20b7ecd57`）で、宛先Codexのみ・Conductorなしの固定返信試験を行った。
+  このRoomは前のturnで作成済みの空Roomで、既存Roomの会話を試験messageへ含めていない。
+- 送信文は`Reply with exactly MIO_STORE_104_OK. Do not use tools, read files, generate images, or perform any other action.`。
+  UI操作とuser入力の競合通知後、再送せず画面を読取り確認したところ、Owner message 1件とCodex reply 1件が存在した。
+  Owner messageは`2026-09-08T06:08:41.883Z`、replyは`2026-09-08T06:08:48.176Z`。
+  reply本文は正確に`MIO_STORE_104_OK`で、artifactは0件。実replyの表示と保存は**PASS**。
+- Room設定から全Room backupを保存し、UIの`Backed up 5 rooms`を確認した。
+  `D:\Documents\M.O.E Backups\moe-room-backup-00000001788847771789.json`は4,120 bytes／5 Room／9 message、
+  SHA-256 `ACC790BFB83F6704FD6B29F823E5CC5A2256D0356458392196E3F3B1742DE5CD`。
+  前回backupの既存4 RoomをIDごとにJSON比較し、全項目の一致を確認した。増えたのは新Roomと試験2 messageだけである。
+  通常contextのsnapshot hashも`999EB1B0F560E60080DEA7A4317C83D7FD2FE3C02F672FE2F453E308068F2B0A`のままだった。
+- 通常終了後は本体・helperともprocess 0件。登録Store app IDから再起動し、WindowsApps配下の
+  `TINMOON.M.I.O_1.0.4.0_x64__kk3nwjsrdvfmr\mio-desktop.exe`が動作することを確認した。
+  起動直後は先頭の`M.I.O.開発室`が開き、`New room 5`を選択すると上記2 messageが再表示された。
+  **会話の永続化はPASS、最後に開いたRoomの自動復帰は未達**。本書の最小smokeを全項目PASSとは扱わない。
+- sourceの`useRooms.ts`はactive Roomを`initialRooms[0].id`で初期化し、hydrate時も現在IDがなければ
+  先頭Roomを採用する。最後の選択Roomを保存・復元する処理は同hookにない。次の改善候補として記録し、
+  今回は実装変更・再build・配布差替えをしていない。
+- 最後はテストRoomと返信を表示したままnative操作sessionをresetした。テストRoom・backupを削除していない。
+  Provider model・権限保持の全確認、clean Windows／WebView2なし環境の試験は別途残る。
+
+### 2026-09-08 次期バージョンへの繰越決定
+
+Ownerの指示により、最後に選択したRoomの自動復帰は次期バージョンで対応する。
+現象・実装の手掛かり・受入条件を`docs/NEXT-VERSION-NOTES.md`に固定した。
+1.0.4の製品codeや配布fileは変更せず、残るclean Windows／WebView2試験を続ける。
+
+### 2026-09-08 15:26–15:34 JSTのclean Windows／WebView2試験
+
+- **直接配布1.0.4のclean install・初回起動・通常終了・再起動: PASS**。
+  新規Windows Sandbox（Windows 11 Enterprise x64、build `26100`）を使った。
+  Store packageのclean取得試験ではなく、BOOTH／itch.ioで配布中のNSIS installerの試験である。
+- install前に、M.I.O.のHKLM／HKCU uninstall登録、標準install先の本体、Room AppDataが存在しないことを確認した。
+  WebView2もHKLM／HKCUのRuntime登録と標準配置先の実行fileがともに存在しなかった。
+- 公開原本から複製した`M.I.O_1.0.4_windows-x64_unsigned-preview_setup.exe`をguest側で再hashし、
+  `5BEBA29831175941B8977DC9E1F7FC0BB3B75B91A01922C88EEF7919330C7B19`の一致を確認した。
+  入力folderはread-only、書込み可能な共有先は今回専用の結果folderだけ。認証情報や既存Roomをguestへ渡していない。
+- Microsoft公式の`wsb exec`から`/S`でinstallし、終了code `0`を確認した。
+  **WebView2未導入からの公式bootstrapper経由の導入: PASS**。Runtime `152.0.4191.66`が登録された。
+  installerが取得したbootstrapperは署名`Valid`、署名者`Microsoft Corporation`、SHA-256
+  `17DEBF797A6C737959BC588236E897936FFAC1AF5F7E515E674AB32F9EDFE719`だった。
+- guestの`C:\Program Files\M.I.O\mio-desktop.exe`はProductVersion `1.0.4`、SHA-256
+  `94CC1B3A43FCF71E097F404A1B1D33523F2C47BA02E6642EA81E9B610E523EC4`。
+  15:32 JSTに初回の実画面でRoom一覧、日本語の初期サンプル会話、`Core + Room ready`を確認した。
+  サンプルには`UI DEMO`表示があり、Providerの実reply試験とは扱わない。
+- 本体右上の終了ボタンから通常終了し、guestの`mio-desktop` process不在を確認した。
+  再起動後は新PID `2420`、version `1.0.4`で動作し、15:33 JSTの実画面で同じ初期Roomとサンプル会話が再表示された。
+  初回PIDは`1936`。終了記録は旧名`moe-command-helper`を対象にしており、現行名`mio-command-helper`の残留確認は含まない。
+- 最初のLogonCommandのPS1はguestの既定ExecutionPolicy `Restricted`で実行されなかった。
+  policyは変更せず、公式CLIで読取り診断・installer実行・起動を分けて行った。installの重複実行はしていない。
+  初回画面確認前のOwnerによるEsc停止では操作を中止し、Ownerの再開依頼後に実画面を確認した。
+  以後は短い画面操作ごとにComputer Use sessionをresetし、記録作業中は使用していない。
+- host側は既存Store版`1.0.4.0`の同一PID `26516`、package identity、WebView2 versionを保持した。
+  通常contextのRoom snapshotもSHA-256 `999EB1B0F560E60080DEA7A4317C83D7FD2FE3C02F672FE2F453E308068F2B0A`で不変。
+  guestは再起動したM.I.O.を残しており、Sandboxを破棄していない。
+- 証拠は`.tools/public-release-prep/1.0.4/clean-sandbox-20260908-1523/`の`results/baseline.json`、
+  `installed.json`、`normal-close.json`、`restart.json`とhost前後記録。結果JSONはlocalに保全する。
+  Provider model・権限保持の全確認は未完了。最後のRoom自動復帰は次期版へ繰越のため、公開後チェック全体は**PARTIAL**を維持する。
+
+### 2026-09-08 15:38–15:44 JSTのStore設定保持確認と試験範囲
+
+- Ownerは「サンドボックスでのAIの確認は無し」と指定した。SandboxのProvider CLI導入・認証・AI送信試験は
+  **Owner方針により省略**する。未設定を障害や再試行待ちとは扱わず、前項のclean install／WebView2試験結果を保持する。
+- **使用中のCodex設定の再起動後保持: PASS**。Store package contextから保存fileを読取り、通常終了の前後で照合した。
+  `participant-profiles-v1.json`は170 bytesで、保存されていた設定はCodexの`gpt-5.6-sol`／`chatOnly`だけだった。
+  SHA-256は前後とも`753761AB4A8F9FB6C07AFD169AC2A1A6C3CD44D5CEC85C5C37EFF4B05D7F4E99`。
+- 再起動前後の実画面でCodexのModel `gpt-5.6-sol`、選択中の`Conversation only`を確認した。
+  `Files: Blocked`／`Commands: Blocked`／`Web and network: Blocked`の表示も一致していた。
+  `New room 5`のRoom設定はworkspace未選択、`No conductor`のまま。プロフィールや権限の変更・保存は行っていない。
+- `room-workspaces-v1.json`は前後とも存在せず、workspace未設定の保持を確認した。
+  `room-snapshot-v1.json`は前後とも4,120 bytes、SHA-256
+  `ACC790BFB83F6704FD6B29F823E5CC5A2256D0356458392196E3F3B1742DE5CD`で、全Room・会話の保存bytesが一致した。
+  通常context側snapshotも既存の`999EB1B0F560E60080DEA7A4317C83D7FD2FE3C02F672FE2F453E308068F2B0A`で不変だった。
+- 通常終了後にhostの`mio-desktop`／`mio-command-helper`／`moe-command-helper`のprocess不在を確認した。
+  OwnerのEsc停止後は操作を中止し、再開依頼後にStore app IDで再起動した。新PID `40212`はStore `1.0.4.0`の
+  WindowsApps配下から動き、packageは引き続きStore署名／Status Okだった。
+  起動直後は先頭Roomへ戻る既知の動作だったため`New room 5`を選び直し、保存済み試験replyの再表示も確認した。
+- 最後はプロフィールを変更せず閉じ、`New room 5`を表示したままComputer Use sessionをresetした。
+  この確認ではhost／Sandboxとも新しいAI送信、CLI認証、workspace read／writeを行っていない。
+- 証拠は`.tools/public-release-prep/1.0.4/store-settings-20260908-1541/`の`before.json`、`closed.json`、
+  `after.json`、`comparison.json`。folder名の時刻と実測日時は異なり、実測は各JSONのUTC timestampを採用する。
+  既存Codex設定の保持を確認したので、この範囲の再試験は不要。未設定の他Providerやworkspace read／writeの
+  全組合せを今回検証したとは扱わない。Room自動復帰の次期版繰越を含め、元の全項目基準の判定は**PARTIAL**を維持する。
 
 ### 判定基準
 

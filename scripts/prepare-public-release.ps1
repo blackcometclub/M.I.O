@@ -4,6 +4,7 @@ param(
     [string]$Destination,
     [switch]$SkipChecks,
     [switch]$SkipInstaller,
+    [switch]$SourceOnlyStable,
     [string]$GitleaksPath,
     [string]$ExpectedSignerSubject,
     [string]$SigningCertificateThumbprint,
@@ -170,13 +171,17 @@ if ([string]::IsNullOrWhiteSpace($installerProductName) -or $installerProductNam
 }
 $releaseTag = "v$releaseVersion"
 $isStableRelease = $releaseVersion -match '^\d+\.\d+\.\d+$'
-if ($isStableRelease -and $SkipInstaller) {
-    throw "A stable release must include a signed Windows installer. Remove -SkipInstaller."
+$omitInstaller = $SkipInstaller -or $SourceOnlyStable
+if ($SourceOnlyStable -and -not $isStableRelease) {
+    throw "-SourceOnlyStable can only be used for a stable semantic version."
 }
-if ($isStableRelease -and [string]::IsNullOrWhiteSpace($ExpectedSignerSubject)) {
+if ($isStableRelease -and $SkipInstaller -and -not $SourceOnlyStable) {
+    throw "A stable release may omit the installer only with the explicit -SourceOnlyStable option."
+}
+if ($isStableRelease -and -not $SourceOnlyStable -and [string]::IsNullOrWhiteSpace($ExpectedSignerSubject)) {
     throw "A stable release requires -ExpectedSignerSubject for Authenticode verification."
 }
-if ($isStableRelease -and (
+if ($isStableRelease -and -not $SourceOnlyStable -and (
     [string]::IsNullOrWhiteSpace($SigningCertificateThumbprint) -or
     [string]::IsNullOrWhiteSpace($TimestampUrl)
 )) {
@@ -231,7 +236,7 @@ $installerSignatureStatus = $null
 $installerSignerSubject = $null
 $installerSignerThumbprint = $null
 $installerTimestampSubject = $null
-if (-not $SkipInstaller) {
+if (-not $omitInstaller) {
     $buildArguments = @{ Installer = $true }
     if (-not [string]::IsNullOrWhiteSpace($SigningCertificateThumbprint)) {
         $buildArguments.SigningCertificateThumbprint = $SigningCertificateThumbprint
@@ -352,6 +357,15 @@ $releasePlan = [ordered]@{
     preparedAt = (Get-Date).ToUniversalTime().ToString("o")
     privateRepository = "blackcometclub/M.I.O-dev"
     publicRepository = "blackcometclub/M.I.O"
+    distributionMode = if ($SourceOnlyStable) {
+        "sourceOnlyStable"
+    }
+    elseif ($SkipInstaller) {
+        "sourceOnly"
+    }
+    else {
+        "signedInstaller"
+    }
     preparationRoot = $preparationRoot
     sourceRoot = (Join-Path $snapshotRoot "source")
     sourceFileList = (Join-Path $snapshotRoot "source-files.txt")
@@ -376,7 +390,7 @@ $releasePlan = [ordered]@{
     releaseNotes = $releaseNotesPath
     gitleaksReport = $gitleaksReportPath
     checksRun = (-not $SkipChecks)
-    installerBuilt = (-not $SkipInstaller)
+    installerBuilt = (-not $omitInstaller)
 }
 
 $releasePlanPath = Join-Path $preparationRoot "release-plan.json"
@@ -391,7 +405,8 @@ $summaryLines = @(
     "Source files: $($snapshotManifest.sourceFileCount)"
     "Source ZIP SHA-256: $($snapshotManifest.archiveSha256)"
     "Validation checks run: $(-not $SkipChecks)"
-    "Installer built: $(-not $SkipInstaller)"
+    "Distribution mode: $($releasePlan.distributionMode)"
+    "Installer built: $(-not $omitInstaller)"
 )
 if ($null -ne $preparedInstallerPath) {
     $summaryLines += "Installer signature: $installerSignatureStatus"

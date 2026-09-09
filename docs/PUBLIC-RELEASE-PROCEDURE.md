@@ -1,12 +1,12 @@
 # M.I.O. 公開手順
 
-この文書は、M.I.O.の次回以降のalpha公開を、確認境界を保ったまま簡略化するための手順です。
+この文書は、M.I.O.のGitHub公開を、確認境界を保ったまま簡略化するための手順です。
 
 公開作業は次の4段階に分けます。
 
 1. private側で公開候補をcommit・pushする
 2. ローカルで公開素材を一括準備する
-3. public repositoryを更新し、GitHub PrereleaseのDraftを作る
+3. public repositoryを更新し、GitHub ReleaseのDraftを作る
 4. Draftを確認して公開する
 
 第2段階まではGitHubを変更しません。第3段階と第4段階は、ヒツジさんの明示承認後にだけ実行します。
@@ -15,7 +15,7 @@
 
 通常、ヒツジさんがPowerShellを操作する必要はありません。Codexへ次の順で依頼できます。
 
-1. 「次のalphaを準備して」
+1. 「次の公開版を準備して」
 2. 表示された版番号、変更内容、検査結果、添付ファイルを確認する
 3. 「Draftを作って」
 4. GitHubのDraft内容を確認する
@@ -57,7 +57,7 @@ repository rootでPowerShell 7を開き、次を実行します。
 
 - tracked working treeとstageがcleanか確認
 - 公開候補commitと`origin/main`の一致確認
-- alpha versionとCHANGELOG節の確認
+- versionとCHANGELOG節の確認
 - TypeScript typecheck
 - frontend build
 - Rust format check
@@ -94,15 +94,23 @@ repository rootでPowerShell 7を開き、次を実行します。
 & .\scripts\prepare-public-release.ps1 -SkipChecks
 ```
 
-source-only Releaseを準備し、installerを作らない場合は次を使います。
+alpha／RCのsource-only Releaseを準備し、installerを作らない場合は次を使います。
 
 ```powershell
 & .\scripts\prepare-public-release.ps1 -SkipInstaller
 ```
 
-正式な配布準備では、原則としてoptionなしのcommandを使用します。
+Microsoft Storeを署名済みアプリの配布元とし、GitHubの安定版をsource-onlyの通常Releaseにする場合は、
+意図をrelease planへ固定する専用optionを使います。
 
-正式版`1.0.0`以降では、certificate storeにあるcode signing certificateの正確な
+```powershell
+& .\scripts\prepare-public-release.ps1 -SourceOnlyStable
+```
+
+`-SkipInstaller`だけでは安定版を準備できません。GitHubへ署名済みinstallerも添付する正式版では、
+原則としてoptionなしのcommandを使用します。
+
+GitHub Releaseへinstallerも添付する場合は、certificate storeにあるcode signing certificateの正確な
 subjectとthumbprint、issuer指定のRFC 3161 HTTPS timestamp URLを渡します。
 
 ```powershell
@@ -114,8 +122,8 @@ $certificate = Get-Item 'Cert:\CurrentUser\My\<thumbprint>'
 ```
 
 秘密鍵、token、passwordはcommand、repository、`release-plan.json`へ書きません。
-正式版ではmain executableとinstallerの署名、certificate subject、chain、timestampを
-検証できない場合、公開素材の生成を途中で停止します。RCの未署名実機試験は継続できます。
+installer添付版ではmain executableとinstallerの署名、certificate subject、chain、timestampを
+検証できない場合、公開素材の生成を途中で停止します。source-only安定版とRCの未署名実機試験は分離します。
 
 ## 3. 公開前プレビュー
 
@@ -136,7 +144,7 @@ $certificate = Get-Item 'Cert:\CurrentUser\My\<thumbprint>'
 
 ファイル変更、commit、push、tag作成、Release作成は行いません。
 
-## 4. GitHub PrereleaseのDraftを作る
+## 4. GitHub ReleaseのDraftを作る
 
 プレビュー結果をヒツジさんが承認した後、画面に表示されたexact source commitを指定して実行します。
 
@@ -162,7 +170,9 @@ $certificate = Get-Item 'Cert:\CurrentUser\My\<thumbprint>'
 - snapshotのfileだけを明示的にstage
 - public release commitとannotated tagを作成
 - `main`とtagをatomic push
-- source ZIP、manifest、SHA256SUMS、installerを添付したDraft Prereleaseを作成
+- source ZIP、manifest、SHA256SUMSと、計画に含まれる場合はinstallerを添付したDraft Releaseを作成
+
+安定版は通常Release、alpha／RCはPrereleaseとして作成します。
 
 `git add .`、`git add -A`、reset、cleanは使用しません。途中で失敗した場合も自動的に状態を消さず、調査できるようその場で停止します。
 
@@ -208,9 +218,8 @@ RC用に`prepare-public-release.ps1`が生成するinstallerは未署名です�
 Previewを付け、未署名であること、SHA-256、source commit、SmartScreen警告時の確認方法を
 公開ページへ記載します。NSIS正式版ではADR 0045に従って署名引数を必須とし、
 `scripts/test-windows-release-signature.ps1`がmain executableとinstallerを検証します。
-Microsoft Store用MSIXは別の成果物・検証経路とします。現在のSubmissionは認定に合格し、
-`今すぐ公開`を選ぶまで公開しない設定で保留されています。認定合格だけでは公開を開始せず、認定結果と
-最終版の整合を確認してから、ヒツジさんがStore公開を明示承認した場合だけ`今すぐ公開`へ進みます。
+Microsoft Store用MSIXは別の成果物・検証経路とします。認定合格だけでは公開を開始せず、認定結果と
+最終版の整合を確認してから、ヒツジさんがStore公開を明示承認した場合だけ公開へ進みます。
 GitHub ReleaseやレーベルサイトもM.I.O.側から自動公開することはありません。
 
 Microsoft Storeへ提出したMSIXが公開された後は、GitHub Releaseの手順と混ぜず、

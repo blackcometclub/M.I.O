@@ -17,6 +17,7 @@ $excludedPaths = @(
     "docs/HANDOFF_2026-08-12_RELAY_CLIENT.md"
     "docs/HANDOFF_2026-08-18_PUBLIC_ALPHA_NO_CLI.md"
     "docs/HANDOFF_2026-08-27_POST_RELEASE_SOURCE_SMOKE.md"
+    "docs/CURRENT-STATUS-CARD.md"
 )
 
 function Invoke-RepositoryGit {

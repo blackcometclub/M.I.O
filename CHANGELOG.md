@@ -2,6 +2,20 @@
 
 M.I.O. (Malevolent Immortal Overdrive) の主な変更を記録します。
 
+## Unreleased
+
+## v1.0.5 — 2026-09-08
+
+Status: manifest versionは`1.0.5`、Store版は`1.0.5.0`。Microsoft Store、TINMOON公式サイト、
+BOOTH、itch.ioで2026-09-09に公開済み。GitHubではsource-onlyの通常Releaseとして配布し、
+未署名installerは添付しない。
+
+### Fixed
+
+- 再起動後、最後に開いていたRoomを表示する。一覧の読込失敗時は保存した選択を上書きせず、
+  削除済み・不正なRoom IDなら存在する先頭Roomへ戻る
+- バックアップ復元後も表示中のRoomが存在すれば選択を維持し、存在しなければ復元先の先頭Roomへ戻る
+
 ## v1.0.4 — 2026-09-07
 
 Status: manifest versionは`1.0.4`。Microsoft Storeの`1.0.4.0`はSubmission 4として公開済み

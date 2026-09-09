@@ -5,16 +5,16 @@
 **M.I.O. (Malevolent Immortal Overdrive)** is a local-first Windows desktop app that brings multiple AIs into one Talk Room, where they can collaborate through direct conversations or Conductor mode.
 
 > [!IMPORTANT]
-> **M.I.O. v1.0.4 is publicly available.** Microsoft Store distributes the signed `1.0.4.0`
-> package, confirmed available on September 8, 2026. BOOTH and itch.io distribute the separate
-> unsigned `1.0.4` Preview released on September 7. The current source version is `1.0.4`.
-> The published application was built from `fbc81b89ee64a670f13128487c06a96bfabe3238`;
+> **M.I.O. v1.0.5 is publicly available.** Microsoft Store distributes the signed `1.0.5.0`
+> package, confirmed public and updated on a physical PC on September 9, 2026. BOOTH and itch.io
+> distribute the separate unsigned `1.0.5` Preview released the same day. The current source version
+> is `1.0.5`. The published application was built from `3076294e1d87821afd1e18f36420d9162820679e`;
 > subsequent release-documentation updates do not change the application code.
 
 - [Microsoft Store](https://apps.microsoft.com/detail/9NS9B7T71XHN) — recommended signed package
 - [BOOTH](https://tinmoon.booth.pm/items/8807279) — free ZIP with optional support; unsigned preview
 - [itch.io](https://tinmoon-label.itch.io/mio-talk-room) — free/pay-what-you-want unsigned preview installer
-- [What's new in v1.0.4](https://tinmoon-label-site.pages.dev/en/works/mio/#release-notes) — release notes in English
+- [What's new in v1.0.5](https://tinmoon-label-site.pages.dev/en/works/mio/#release-notes) — release notes in English
 
 The published [alpha.2 Release](https://github.com/blackcometclub/M.I.O/releases/tag/v0.1.0-alpha.2)
 and earlier releases remain immutable historical artifacts. They are not replaced or repurposed as

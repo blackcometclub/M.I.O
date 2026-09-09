@@ -1,13 +1,25 @@
 # M.I.O. V1 readiness checklist
 
-- Status: Working draft
+- Status: 1.0.5公開後記録（包括的な旧V1基準には未完項目あり）
 - Date: 2026-09-04
-- Last verified: 2026-09-08（Store `1.0.4.0`公開・実機更新、直接配布 `1.0.4`）
-- Target: Windows x64向けの一般公開安定版 `v1.0.0`
+- Last verified: 2026-09-09（Store `1.0.5.0`公開・実機更新、直接配布 `1.0.5`）
+- Current release: Store `1.0.5.0`／直接配布 `1.0.5`／GitHub `v1.0.4`
+- Original target: Windows x64向けの一般公開安定版 `v1.0.0`
 - Starting point: `v0.1.0-alpha.2`
 - Rule: 未確認項目を推測で完了にしない
 
-## 2026-09-08の公開後確認
+## 現在の作業一覧
+
+[現在地カード](CURRENT-STATUS-CARD.md)を最新の未完了一覧とする。
+Store、TINMOON、BOOTH、itch.ioの1.0.5公開と、通常版／Store署名版のRoom自動復帰は確認済み。
+Sandbox AI試験はOwner指定で省略した。公開GitHubの`v1.0.5`は未公開で、次の公開残件として現在地カードへ記録する。
+詳細は[1.0.5の公開・確認結果](RELEASE-1.0.5-PREPARATION.md)を参照。
+
+以下は時系列の証拠と当初の包括的なV1基準である。各日付の「未確認」はその時点の状態であり、
+現行1.0.4の残作業とは限らない。旧1.0.0 tag・自前署名・clean runner CIをまとめた未チェック欄を
+一括で完了にせず、現在の完了・省略・次期対応は上記の一覧で区別する。
+
+## 2026-09-08の公開後確認（時系列記録）
 
 Store Submission 4／`1.0.4.0`の公開と、Owner承認済みのStore実機更新・起動・通常終了・再起動を
 確認した。登録状態は`SignatureKind: Store`／`Status: Ok`で、実行中の本体も`1.0.4`だった。
@@ -16,7 +28,7 @@ Ownerの方針は「Store側の現状を使い、履歴の復元・移行は不�
 
 BOOTH／itch.ioの公開downloadは`1.0.4`を確認した。同日の後続作業で、公式紹介サイトの日英ページを
 Store `1.0.4.0`／直接配布`1.0.4`へ更新し、3媒体の`1.0.4`更新履歴も揃えて公開した。
-GitHubの`v1.0.4` Releaseは未作成。
+GitHubの`v1.0.4` Releaseも同日13:50 JSTに通常Releaseとして公開し、Latestを確認した。
 clean環境試験や最小smokeの未確認項目は継続し、公開後チェック全体は**PARTIAL**とする。
 証拠、backup path、確認範囲は[Store公開後チェックリスト](MICROSOFT-STORE-POST-PUBLICATION-CHECKLIST.md#判定)を参照。
 
@@ -25,6 +37,92 @@ Ownerの2026-09-08追加依頼により、glib警告の確認後、TINMOONサイ
 サイトcommit `61af285d69bd72d71977309a26ca651b1a249e04`は`TINMOON-Label/TINMOON-Label-Site`の
 `main`へpush済み。Astro build（23ページ）、Cloudflare Pages check成功、日英の公開HTTP 200と
 版数・新旧履歴の存在を確認した。BOOTH／itch.ioも非login browserの公開本文で反映を確認した。
+
+### GitHub v1.0.4公開結果
+
+- Owner確認後、private README commit `25a2d7982e25f3640797f2052e7dc34c4c0459f0`から履歴を含まない
+  source 389ファイルをexportし、public `main`へ独立commit `1376ec45771c3d73553c823f5cdbc6b6645cb549`
+  とtag `v1.0.4`をatomic pushした。public indexの389 blobはprivate source commitと一致した。
+- [Release v1.0.4](https://github.com/blackcometclub/M.I.O/releases/tag/v1.0.4)（ID `384451157`）は
+  `2026-09-08T04:50:14Z`に公開。`draft: false`、`prerelease: false`、Latest `v1.0.4`を確認した。
+- 英語＋日本語の本文、Store `1.0.4.0`への案内、ソースZIP・manifest・SHA256SUMSの3添付物を掲載。
+  未署名installerは添付せず、直接配布はBOOTH／itch.ioへ案内する。旧alphaのRelease／tag／assetは不変更。
+- ソースZIPは7,548,947 bytes、SHA-256
+  `830083992904909ba69d1a42de851d8ec1266264249f2c5f680d0c5d90e228e7`。
+  公開APIへ認証なしでアクセスし、3添付物を実downloadしてlocalおよびGitHub digestと全件一致を確認した。
+- 最終sourceのGitleaks 8.30.1は0 findings。既存1.0.4からのアプリコード変更はなく、今回build／実機試験や
+  GitHub CIを再実行したとは扱わない。
+- 公開前のDependabotには旧`fast-uri`のHigh 4件、旧`qs`と既知の`glib`のModerate 2件が残っていた。
+  public lockfileは修正版`fast-uri 3.1.7`／`qs 6.16.0`を含むことを確認済みで、GitHub側の再判定は未確認。
+  警告の手動dismissは行っていない。Linux向けglibの既知判定はSecurity節を参照。
+- 証拠: `.tools/public-release-prep/1.0.4/8dd0fc5-github-20260908/`の`github-published-result.json`、
+  `anonymous-download-verification.json`、`final-artifacts/`。この記録追記で公開tagのsourceは変更しない。
+
+### 2026-09-08 14:21 JSTの公開窓口確認
+
+- public repositoryのdefault branchは`main`。GitHub Contents APIから取得したroot
+  `package-lock.json`は、local `adb9b61`と同じGit blob
+  `3701c2b0c5336a4b1257bdb9b59e1b300efd44cc`だった。実内容も`fast-uri 3.1.7`／`qs 6.16.0`である。
+- public Dependabotは引き続きopen 6件（fast-uri High 4件、qs Moderate 1件、glib Moderate 1件）。
+  privateはglib Moderate 1件。公開sourceへの修正版反映は確認できたが、public警告の解消は未確認。
+  手動dismiss、依存更新、既存Dependabot PRのmerge／closeは行っていない。
+- publicのopen Issueは0件。open PRは既存Dependabotの#1／#2だけだった。
+  public security advisories APIは0件を返した。private側の同APIは404で確認不能だったため、
+  非公開脆弱性報告がないとは断定しない。support受信箱とProvider告知は今回の確認範囲に含まない。
+- TINMOON日英、BOOTH、itch.ioの公開ページはすべてHTTP 200で`1.0.4`表記を確認した。
+  BOOTH／itch.ioの実download・再hash、Store最小smoke、clean Windows／WebView2なし試験は未実施のまま。
+- TINMOON日英ページへ`v1.0.4` Releaseへの直接linkを追加した。サイトcommit
+  `ae9c68bfd6fbf87583c4ad049a0917971dd5aadf`をpushし、Astro 23ページbuildとCloudflare Pages
+  deployment `8948bb3c-bb36-45ae-9781-4eb0bed4d855`の成功を確認した。
+  日英公開ページはHTTP 200で、`https://github.com/blackcometclub/M.I.O/releases/tag/v1.0.4`への
+  `href`が実際に含まれていた。既存のStore／BOOTH／itch.io／repository linkも保持した。
+
+### 2026-09-08午後の実機確認の追記
+
+Store `1.0.4.0`のRoom往復切替、設定panel開閉、Room一覧開閉、画像なし表示への復帰、通常終了・
+再起動後の元の会話表示を実画面で確認した。Store側のRoom backupは4 Room／7 message、3,459 bytesで、
+同日午前のStore snapshotとSHA-256が一致した。詳細と保存先は
+[公開後チェックリスト](MICROSOFT-STORE-POST-PUBLICATION-CHECKLIST.md)に記録した。
+最後にuser入力を検知したためnative操作を中止し、sessionをresetした。
+
+BOOTHの無料downloadはEdgeで`ERR_BLOCKED_BY_CLIENT`となり、itch.ioも保存fileを確認できなかった。
+両配布物の実取得・hash照合は未完了で、ブロックを回避していない。実Provider送信とclean環境試験も未実施のため、
+全体は引き続き**PARTIAL**である。
+
+同日14:51 JST、Ownerの再試行依頼でBOOTH ZIPの実取得・原本とのSHA-256一致を確認した。
+itch.ioも受信した`.crdownload`のbytesがinstaller原本・掲載値・BOOTH ZIP内installerと一致した。
+両媒体の配布内容の照合は完了し、itch.ioのbrowser保存完了だけが保留となった。
+詳細は公開後チェックリストの「配布取得再確認」を参照。実Provider送信とclean環境試験は未実施のままである。
+
+### 2026-09-08のStore実replyと再起動後の確認
+
+Ownerの提示画像でitch.ioの保存保留表示がEdgeの`一般的にダウンロードされていません`という警告と確認できた。
+受信bytesは原本と一致しており、警告解除や実行は行っていない。
+
+Store `1.0.4.0`の空の`New room 5`からCodexへ固定replyを1回送り、正確な`MIO_STORE_104_OK`を受信した。
+5 Room／9 messageのbackupへ保存され、元の4 Roomは全項目が前回backupと一致した。
+通常終了・再起動後もテストRoomを選択するとreplyが再表示された。ただし起動直後は先頭Roomへ戻るため、
+「最後に開いたRoomの自動復帰」は未達。`useRooms.ts`に選択Roomの永続化がないことを確認した。
+詳細・hash・試験日時は公開後チェックリストに記録した。Ownerの2026-09-08の指示により自動復帰は次期バージョンで対応し、
+受入条件を`docs/NEXT-VERSION-NOTES.md`へ残した。製品codeや公開artifactは変更していない。
+実reply・会話保存はPASS、全体のPARTIAL判定は継続する。
+
+### 2026-09-08のclean Windows／WebView2試験
+
+新規Windows Sandbox（Windows 11 Enterprise x64、build 26100）で、直接配布1.0.4のinstall・初回起動・
+通常終了・再起動を確認した。M.I.O.とWebView2の未導入を事前に記録し、公開installerのguest側hash一致、
+install終了code 0、署名が有効なMicrosoft bootstrapperによるWebView2 `152.0.4191.66`の導入を確認した。
+初回と再起動後の実画面で初期Room・日本語サンプル会話・`Core + Room ready`を確認したため、
+以下のclean WindowsとWebView2未導入試験の2項目を完了とする。Store packageのclean取得やProvider実replyの証拠とは区別する。
+詳細・hash・local証拠は[公開後チェックリスト](MICROSOFT-STORE-POST-PUBLICATION-CHECKLIST.md)に記録した。
+
+### 2026-09-08のStore設定保持とSandbox AI試験の省略
+
+Store `1.0.4.0`の使用中Codex設定（`gpt-5.6-sol`／会話のみ）が通常終了・再起動後も保持されることを、
+実画面とpackage contextの保存file SHA-256一致で確認した。workspace未設定と全Room・会話の保存bytesも不変だった。
+今回のCodex設定保持はPASS。未設定Providerやworkspace read／writeの全組合せ試験は含まない。
+Owner指定によりSandboxのProvider導入・認証・AI送信試験は省略し、追加設定を要求しない。
+詳細は公開後チェックリストの「Store設定保持確認と試験範囲」を参照。最後のRoom自動復帰は次期版の対応項目とする。
 
 ## V1の完成条件
 
@@ -562,7 +660,7 @@ Model-free AppContainer evidence:
     wingetでは更新なしと表示されたため、Store appの実際の更新結果を採用した。
     通常版の5 Room／316 messageとStore版の4 Room／7 messageはAppData仮想化で分離されていた。
     両側のsnapshotを保全し、Ownerの希望どおりStore側を継続使用する。履歴移行は行わない
-- [ ] Windows 11 x64のclean環境でinstall、起動、終了を確認する。Windows 10はADR 0043に従いV1で保証しない
+- [x] Windows 11 x64のclean環境でinstall、起動、終了を確認する。Windows 10はADR 0043に従いV1で保証しない
   - 2026-09-05、同じWindows 11実機で旧版を通常uninstallしてから`dcb90b8`系NSISを再installし、
     初回起動がほぼ即時に完了することをOwnerが目視確認した。`C:\Program Files\M.I.O`には
     `mio-desktop.exe`と`mio-command-helper.exe`が存在し、旧`moe-desktop.exe`／`moe-command-helper.exe`は
@@ -573,7 +671,11 @@ Model-free AppContainer evidence:
     Ownerが既存Roomと会話履歴の保持、発言右クリックメニューの1行表示を目視確認した。右上の終了後は
     本体／helper processが残らず、開発用port 1420も解放された。これは同じ実機の更新試験であり、
     別のclean環境試験は未完了のままとする
-- [ ] WebView2 Runtimeがない環境で公式bootstrapper経由の導入を確認する
+  - 2026-09-08、新規Windows Sandboxで直接配布1.0.4のinstall・起動・通常終了・再起動を確認した。
+    既存M.I.O.とRoom AppDataがないことを事前確認し、install終了code 0と初回・再起動後の実画面を確認した
+- [x] WebView2 Runtimeがない環境で公式bootstrapper経由の導入を確認する
+  - 2026-09-08、同じ新規SandboxでWebView2のHKLM／HKCU登録と標準配置先fileの不在を確認した後、
+    1.0.4のNSISが公式bootstrapperを取得してRuntime `152.0.4191.66`を導入した。bootstrapperのMicrosoft署名はValidだった
 - [x] 「設定 → アプリ」からinteractive uninstall画面と削除完了を人の目で確認する
   - 2026-09-02にcurrent-user RCのHKCU登録内容は正しい一方、このWindows 11実機の設定、
     「プログラムと機能」、`Get-Package`、`winget list`では列挙されないことを確認した。表示名の
@@ -954,7 +1056,7 @@ Providerのloginや外部送信を伴う項目はCIでは代替できない。te
 Fable、Gemini、Grokのworkspace read／writeは、Codex以外もV1で対応すると明示的に決めない限り
 必須としない。CodexのRoom workspaceとProviderごとのmodel選択はV1必須とする。
 
-## 推奨する実行順
+## 当初の推奨実行順（履歴）
 
 1. installer smoke記録とこのV1 checklistをcommitして現状証拠を固定する
 2. AppContainer workspace隔離spikeを行い、V1の安全な実装方式をADRで決める
@@ -966,7 +1068,9 @@ Fable、Gemini、Grokのworkspace read／writeは、Codex以外もV1で対応す
 8. 文書、site、release notesをRCの実物へ合わせる
 9. 署名済みartifactをdraftで確認し、ownerの最終承認後に公開する
 
-## 現時点の自己評価
+## 計画開始時の自己評価（履歴）
+
+現在の評価は冒頭の「現在の作業一覧」と1.0.4整理文書を参照。以下は当初の課題設定として保持する。
 
 製品のRoom、Direct／Conductor、fail-safe試験はV1にかなり近い。一方、M.I.O.を作った
 中心目的であるRoom workspaceは、Windows native sandboxのnested junction read／write境界を

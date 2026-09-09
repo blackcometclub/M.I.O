@@ -220,24 +220,48 @@ if ($null -ne $releasePlan.installer) {
 }
 
 $isStableRelease = [string]$releasePlan.version -match '^\d+\.\d+\.\d+$'
+$distributionMode = if ($releasePlan.PSObject.Properties.Name -contains "distributionMode") {
+    [string]$releasePlan.distributionMode
+}
+elseif ($null -eq $releasePlan.installer) {
+    "sourceOnly"
+}
+else {
+    "signedInstaller"
+}
+$supportedDistributionModes = @("sourceOnly", "sourceOnlyStable", "signedInstaller")
+if ($distributionMode -notin $supportedDistributionModes) {
+    throw "Unsupported distribution mode in release plan: $distributionMode"
+}
+if ($distributionMode -eq "sourceOnlyStable" -and -not $isStableRelease) {
+    throw "distributionMode sourceOnlyStable requires a stable semantic version."
+}
+if ($distributionMode -in @("sourceOnly", "sourceOnlyStable") -and $null -ne $releasePlan.installer) {
+    throw "A source-only release plan must not include an installer."
+}
+if ($distributionMode -eq "signedInstaller" -and $null -eq $releasePlan.installer) {
+    throw "distributionMode signedInstaller requires an installer."
+}
 if ($isStableRelease) {
-    if ($null -eq $releasePlan.installer) {
-        throw "A stable release plan must include a signed Windows installer."
+    if ($null -eq $releasePlan.installer -and $distributionMode -cne "sourceOnlyStable") {
+        throw "A stable release plan without an installer must explicitly use distributionMode sourceOnlyStable."
     }
-    if ([string]$releasePlan.installer.signatureStatus -cne "Valid") {
-        throw "A stable release plan requires a Valid Authenticode signature."
-    }
-    if ([string]::IsNullOrWhiteSpace([string]$releasePlan.installer.signerSubject)) {
-        throw "A stable release plan is missing its verified signer subject."
-    }
-    if ([string]::IsNullOrWhiteSpace([string]$releasePlan.installer.timestampSubject)) {
-        throw "A stable release plan is missing its verified timestamp subject."
-    }
+    if ($null -ne $releasePlan.installer) {
+        if ([string]$releasePlan.installer.signatureStatus -cne "Valid") {
+            throw "A stable release plan requires a Valid Authenticode signature."
+        }
+        if ([string]::IsNullOrWhiteSpace([string]$releasePlan.installer.signerSubject)) {
+            throw "A stable release plan is missing its verified signer subject."
+        }
+        if ([string]::IsNullOrWhiteSpace([string]$releasePlan.installer.timestampSubject)) {
+            throw "A stable release plan is missing its verified timestamp subject."
+        }
 
-    & $signatureTestScript `
-        -Path @($installerPath) `
-        -ExpectedSignerSubject ([string]$releasePlan.installer.signerSubject) |
-        Out-Host
+        & $signatureTestScript `
+            -Path @($installerPath) `
+            -ExpectedSignerSubject ([string]$releasePlan.installer.signerSubject) |
+            Out-Host
+    }
 }
 
 $remoteResult = Invoke-PublicGit -GitArguments @("remote", "get-url", "origin")
@@ -296,6 +320,7 @@ $comparison = Get-PathComparison `
 Write-Host "M.I.O. public release preview"
 Write-Host "Version: $($releasePlan.version)"
 Write-Host "Tag: $($releasePlan.tag)"
+Write-Host "Distribution mode: $distributionMode"
 Write-Host "Private source commit: $($releasePlan.sourceCommit)"
 Write-Host "Public repository HEAD: $((Invoke-PublicGit -GitArguments @('rev-parse', 'HEAD')).Output[-1])"
 Write-Host "Files to add: $($comparison.Added.Count)"
@@ -328,16 +353,22 @@ if ($PublishDraft) {
         throw "-PublishDraft requires -ConfirmTag $($releasePlan.tag)."
     }
 
-    Invoke-Gh -Arguments @(
+    $publishArguments = @(
         "release"
         "edit"
         ([string]$releasePlan.tag)
         "--repo"
         ([string]$releasePlan.publicRepository)
         "--draft=false"
-        "--prerelease"
     )
-    Write-Host "Published GitHub Prerelease $($releasePlan.tag)."
+    if ($isStableRelease) {
+        $publishArguments += @("--prerelease=false", "--latest")
+    }
+    else {
+        $publishArguments += "--prerelease"
+    }
+    Invoke-Gh -Arguments $publishArguments
+    Write-Host "Published GitHub Release $($releasePlan.tag)."
     exit 0
 }
 
@@ -436,7 +467,7 @@ if ($null -ne $installerPath) {
     $releaseAssets += $installerPath
 }
 
-Invoke-Gh -Arguments (@(
+$createArguments = @(
     "release"
     "create"
     ([string]$releasePlan.tag)
@@ -444,13 +475,16 @@ Invoke-Gh -Arguments (@(
     ([string]$releasePlan.publicRepository)
     "--verify-tag"
     "--draft"
-    "--prerelease"
     "--title"
     "M.I.O. $($releasePlan.tag)"
     "--notes-file"
     $releaseNotesPath
-) + $releaseAssets)
+)
+if (-not $isStableRelease) {
+    $createArguments += "--prerelease"
+}
+Invoke-Gh -Arguments ($createArguments + $releaseAssets)
 
-Write-Host "Draft GitHub Prerelease created for $($releasePlan.tag)."
+Write-Host "Draft GitHub Release created for $($releasePlan.tag)."
 Write-Host "Review the draft, then publish it only after explicit Owner approval:"
 Write-Host "& .\scripts\publish-public-release.ps1 -Plan `"$releasePlanPath`" -PublicRepositoryPath `"$publicRoot`" -PublishDraft -ConfirmTag $($releasePlan.tag)"
